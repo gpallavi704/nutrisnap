@@ -1,0 +1,20 @@
+# Secrets -- never commit
+.env
+.env.local
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+
+# Vercel
+.vercel/
+
+# Eval artefacts
+eval/samples/
+
+# OS
+.DS_Store
+.vscode/

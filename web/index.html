@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NutriSnap</title>
+<style>
+  :root {
+    --ground:#F6F8F7; --card:#FFFFFF; --sunk:#EDF1EF;
+    --ink:#141A19; --soft:#4B5654; --faint:#78837F;
+    --rule:#DCE2DF; --heavy:#141A19;
+    --accent:#12656B; --accent-soft:#E0EDED;
+    --good:#2F7D4F; --warn:#B4761A; --bad:#B33A2B;
+    --good-bg:#E6F0E9; --warn-bg:#F7EFE0; --bad-bg:#F7E8E5;
+    --cond:"Avenir Next Condensed","Arial Narrow",system-ui,sans-serif;
+    --sans:ui-sans-serif,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --mono:ui-monospace,"SF Mono",Menlo,monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:#0E1413; --card:#161D1C; --sunk:#1C2423;
+      --ink:#E7EDEA; --soft:#AEB9B6; --faint:#87918E;
+      --rule:#2A3432; --heavy:#E7EDEA;
+      --accent:#4FB3B8; --accent-soft:#16302F;
+      --good:#62B583; --warn:#D6A24C; --bad:#DE7C6B;
+      --good-bg:#172A20; --warn-bg:#2C2415; --bad-bg:#2E1D19;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+       font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:940px;margin:0 auto;padding:0 20px 80px}
+
+  header{padding:34px 0 18px;border-bottom:5px solid var(--heavy)}
+  h1{font-family:var(--cond);font-size:2.6rem;margin:0;letter-spacing:-.01em;line-height:1}
+  .tag{color:var(--soft);margin:.5rem 0 0;max-width:46ch}
+
+  .controls{display:grid;gap:18px;padding:22px 0;border-bottom:1px solid var(--rule)}
+  .lbl{font-family:var(--cond);text-transform:uppercase;letter-spacing:.12em;
+       font-size:.7rem;font-weight:700;color:var(--faint);margin-bottom:.5rem}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{border:1px solid var(--rule);background:var(--card);color:var(--ink);
+        padding:.45rem .8rem;border-radius:999px;cursor:pointer;font-size:.88rem;
+        font-family:inherit;transition:background .12s,border-color .12s}
+  .chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  .actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .btn{font-family:var(--cond);text-transform:uppercase;letter-spacing:.08em;
+       font-weight:700;font-size:.85rem;padding:.7rem 1.15rem;border-radius:4px;
+       border:1px solid var(--heavy);background:var(--heavy);color:var(--ground);
+       cursor:pointer}
+  .btn.ghost{background:transparent;color:var(--ink)}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  input[type=file]{display:none}
+
+  .status{font-size:.9rem;color:var(--soft);min-height:1.4em}
+  .status.err{color:var(--bad)}
+
+  .empty{border:1px dashed var(--rule);border-radius:6px;padding:38px 20px;
+         text-align:center;color:var(--faint);margin-top:26px}
+
+  .tray{display:grid;gap:18px;margin-top:26px}
+  @media(min-width:720px){.tray.multi{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}}
+
+  .card{background:var(--card);border:1px solid var(--rule);border-top:5px solid var(--heavy);
+        border-radius:0 0 6px 6px;padding:18px}
+  .card.win{border-top-color:var(--good)}
+  .rank{font-family:var(--cond);text-transform:uppercase;letter-spacing:.1em;
+        font-size:.68rem;font-weight:700;color:var(--faint)}
+  .rank .best{color:var(--good)}
+  .pname{font-family:var(--cond);font-size:1.35rem;line-height:1.1;margin:.3rem 0 .1rem}
+  .brand{color:var(--faint);font-size:.85rem}
+
+  .headline{margin:16px 0;padding:14px;background:var(--sunk);border-radius:4px}
+  .headline .big{font-family:var(--cond);font-size:2.1rem;line-height:1;
+                 font-variant-numeric:tabular-nums}
+  .headline .cap{font-size:.85rem;color:var(--soft);margin-top:.35rem}
+  .headline.alarm{background:var(--bad-bg)}
+  .headline.alarm .big{color:var(--bad)}
+
+  .score{display:flex;align-items:baseline;gap:10px;margin:6px 0 14px}
+  .score .n{font-family:var(--cond);font-size:2rem;font-variant-numeric:tabular-nums}
+  .score .of{color:var(--faint);font-size:.85rem}
+
+  .row{display:flex;justify-content:space-between;gap:12px;padding:.42rem 0;
+       border-bottom:1px solid var(--rule);font-size:.9rem;
+       font-variant-numeric:tabular-nums}
+  .row:last-child{border-bottom:none}
+  .row .v{font-family:var(--mono);font-size:.85rem;white-space:nowrap}
+  .bar{height:4px;background:var(--sunk);border-radius:2px;overflow:hidden;
+       width:70px;margin-top:6px}
+  .bar i{display:block;height:100%;background:var(--accent)}
+
+  .flag{display:flex;gap:8px;padding:.5rem .65rem;border-radius:4px;margin-bottom:6px;
+        font-size:.88rem;align-items:flex-start}
+  .flag.ok{background:var(--good-bg);color:var(--good)}
+  .flag.caution{background:var(--warn-bg);color:var(--warn)}
+  .flag.avoid{background:var(--bad-bg);color:var(--bad)}
+  .flag.unknown{background:var(--sunk);color:var(--soft)}
+
+  .note{font-size:.87rem;color:var(--soft);padding:.3rem 0 .3rem .8rem;
+        border-left:2px solid var(--accent);margin-bottom:8px}
+
+  details{margin-top:12px;font-size:.88rem}
+  summary{cursor:pointer;color:var(--accent);font-family:var(--cond);
+          text-transform:uppercase;letter-spacing:.08em;font-size:.72rem;font-weight:700}
+  .src{font-family:var(--mono);font-size:.72rem;color:var(--faint);margin-top:12px}
+
+  footer{margin-top:44px;padding-top:14px;border-top:1px solid var(--rule);
+         font-size:.8rem;color:var(--faint)}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>NutriSnap</h1>
+    <p class="tag">Not "does this fit my diet" — <em>what am I actually eating?</em>
+       Scan a label and get the arithmetic it's arranged to obscure.</p>
+  </header>
+
+  <div class="controls">
+    <div>
+      <div class="lbl">What matters to you</div>
+      <div class="chips" id="goals"></div>
+    </div>
+    <div>
+      <div class="lbl">Flag ingredients for</div>
+      <div class="chips" id="diets"></div>
+    </div>
+    <div class="actions">
+      <label class="btn" for="cam">Scan a label</label>
+      <input type="file" id="cam" accept="image/*" capture="environment">
+      <button class="btn ghost" id="demo">Load sample</button>
+      <button class="btn ghost" id="clear">Clear tray</button>
+    </div>
+    <div class="status" id="status" role="status" aria-live="polite"></div>
+  </div>
+
+  <div id="empty" class="empty">
+    Scan a product to begin. Add a second and they'll rank against each other.
+  </div>
+
+  <div class="tray" id="tray"></div>
+
+  <footer>
+    Data from Open Food Facts (ODbL). Informational analysis of a label, not
+    medical or dietary advice. Nothing is stored — images are read and discarded.
+  </footer>
+</div>
+
+<script>
+const GOALS = {
+  less_sugar:"Cut sugar", more_protein:"More protein", less_sodium:"Less sodium",
+  less_processed:"Less processed", balanced:"Balanced"
+};
+const DIETS = {
+  vegan:"Vegan", vegetarian:"Vegetarian", gluten_free:"Gluten free", dairy_free:"Dairy free"
+};
+const state = { goal:"less_sugar", diets:new Set(), tray:[] };
+
+const $ = s => document.querySelector(s);
+const status = (msg, isErr=false) => {
+  const el = $("#status"); el.textContent = msg || ""; el.classList.toggle("err", isErr);
+};
+
+function chips(host, entries, isActive, onPick) {
+  host.innerHTML = "";
+  for (const [key, label] of Object.entries(entries)) {
+    const b = document.createElement("button");
+    b.className = "chip"; b.type = "button"; b.textContent = label;
+    b.setAttribute("aria-pressed", isActive(key));
+    b.onclick = () => { onPick(key); render(); };
+    host.appendChild(b);
+  }
+}
+
+function renderChips() {
+  chips($("#goals"), GOALS, k => state.goal === k, k => { state.goal = k; rescoreAll(); });
+  chips($("#diets"), DIETS, k => state.diets.has(k),
+        k => { state.diets.has(k) ? state.diets.delete(k) : state.diets.add(k); rescoreAll(); });
+}
+
+/* Shrink before upload: a 4000px phone photo costs far more tokens than a
+   nutrition panel needs, and the round trip is slower for no extra accuracy. */
+function resize(file, max = 1100) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.width * scale);
+      c.height = Math.round(img.height * scale);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      resolve(c.toDataURL("image/jpeg", 0.82));
+      URL.revokeObjectURL(img.src);
+    };
+    img.onerror = () => reject(new Error("that file isn't a readable image"));
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+/* Barcodes are decoded here, not on the server: when one is found the photo
+   never leaves the device — only thirteen digits do. */
+async function readBarcode(file) {
+  if (!("BarcodeDetector" in window)) return null;
+  try {
+    const det = new BarcodeDetector({ formats: ["ean_13", "ean_8", "upc_a", "upc_e"] });
+    const bmp = await createImageBitmap(file);
+    const found = await det.detect(bmp);
+    bmp.close?.();
+    return found.length ? found[0].rawValue : null;
+  } catch { return null; }
+}
+
+async function send(payload) {
+  const r = await fetch("/api/analyze", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...payload, goal: state.goal, diets: [...state.diets] })
+  });
+  const body = await r.json();
+  if (!r.ok) throw new Error(body.error || "analysis failed");
+  return body;
+}
+
+async function scan(file) {
+  status("Reading the label…");
+  try {
+    const barcode = await readBarcode(file);
+    let result;
+    if (barcode) {
+      status(`Barcode ${barcode} — looking it up…`);
+      try {
+        result = await send({ barcode });
+      } catch {
+        status("Not in the database — reading the panel from the photo…");
+        result = await send({ image: await resize(file) });
+      }
+    } else {
+      result = await send({ image: await resize(file) });
+    }
+    state.tray.push(result);
+    status("");
+    render();
+  } catch (e) {
+    status(e.message, true);
+  }
+}
+
+async function rescoreAll() {
+  if (!state.tray.length) return render();
+  status("Rescoring…");
+  const refreshed = [];
+  for (const item of state.tray) {
+    try {
+      refreshed.push(item.product.barcode
+        ? await send({ barcode: item.product.barcode })
+        : item);
+    } catch { refreshed.push(item); }
+  }
+  state.tray = refreshed;
+  status("");
+  render();
+}
+
+const num = (v, d = 1) => v === null || v === undefined ? "—" : Number(v).toFixed(d).replace(/\.0$/, "");
+
+function card(item, rank, total) {
+  const s = item.score, p = item.product, h = item.headline;
+  const el = document.createElement("article");
+  el.className = "card" + (total > 1 && rank === 0 && s.total !== null ? " win" : "");
+
+  const position = total > 1
+    ? `<div class="rank">${rank === 0 && s.total !== null
+        ? '<span class="best">Best for ' + s.goal_label.toLowerCase() + '</span>'
+        : "#" + (rank + 1)}</div>` : "";
+
+  const tsp = h.teaspoons;
+  const alarm = tsp !== null && tsp >= 6;
+  const headline = h.sugar_g === null ? "" : `
+    <div class="headline ${alarm ? "alarm" : ""}">
+      <div class="big">${num(h.sugar_g)} g sugar</div>
+      <div class="cap">${tsp !== null ? `about ${num(tsp)} teaspoons` : ""}
+        — per ${h.basis === "package" ? "whole package" : "serving"}${
+        p.servings_per_container > 1.2
+          ? `, which the label splits into ${num(p.servings_per_container, 2)} servings` : ""}</div>
+    </div>`;
+
+  const rubric = s.components.map(c => `
+    <div class="row">
+      <span>${c.label}<div class="bar"><i style="width:${c.subscore ?? 0}%"></i></div></span>
+      <span class="v">${c.value === null ? "not read" : num(c.value) + " " + c.unit}</span>
+    </div>`).join("");
+
+  const flags = item.flags.map(f =>
+    `<div class="flag ${f.level}"><span>${f.detail}</span></div>`).join("");
+
+  const notes = item.notes.map(n => `<div class="note">${n}</div>`).join("");
+
+  el.innerHTML = `
+    ${position}
+    <div class="pname">${p.name}</div>
+    ${p.brand ? `<div class="brand">${p.brand}</div>` : ""}
+    <div class="score">
+      <span class="n">${s.total === null ? "—" : s.total}</span>
+      <span class="of">${s.total === null ? (s.reason || "not scorable") : "/ 100 · " + s.goal_label + " · " + s.basis}</span>
+    </div>
+    ${headline}
+    ${flags}
+    ${notes}
+    ${item.additive_summary ? `<div class="note">${item.additive_summary}</div>` : ""}
+    ${!item.macro_ok ? `<div class="flag caution"><span>The macros don't reconcile with the calories — this reading may be wrong.</span></div>` : ""}
+    <details><summary>How this was scored</summary>${rubric}</details>
+    <div class="src">source: ${p.source === "openfoodfacts" ? "Open Food Facts (verified)" : "read from your photo"}</div>`;
+  return el;
+}
+
+function render() {
+  renderChips();
+  const tray = $("#tray");
+  tray.innerHTML = "";
+  $("#empty").style.display = state.tray.length ? "none" : "block";
+  tray.classList.toggle("multi", state.tray.length > 1);
+
+  const ranked = [...state.tray].sort((a, b) =>
+    (a.score.total === null) - (b.score.total === null) || b.score.total - a.score.total);
+
+  ranked.forEach((item, i) => tray.appendChild(card(item, i, ranked.length)));
+}
+
+$("#cam").addEventListener("change", e => {
+  const f = e.target.files[0];
+  if (f) scan(f);
+  e.target.value = "";
+});
+$("#clear").onclick = () => { state.tray = []; status(""); render(); };
+$("#demo").onclick = async () => {
+  status("Loading three sample products…");
+  const samples = ["5449000000996", "3017620422003", "0028400064057"];
+  state.tray = [];
+  for (const b of samples) {
+    try { state.tray.push(await send({ barcode: b })); } catch {}
+  }
+  status(state.tray.length ? "" : "Couldn't reach Open Food Facts.", !state.tray.length);
+  render();
+};
+
+render();
+</script>
+</body>
+</html>

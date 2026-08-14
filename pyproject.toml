@@ -1,0 +1,20 @@
+[project]
+name = "nutrisnap"
+version = "0.1.0"
+description = "Reads a grocery label and tells you what the arithmetic actually says"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "groq>=1.6.0",
+    "httpx>=0.28",
+    "python-dotenv>=1.2",
+    "uvicorn>=0.34",
+]
+
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
