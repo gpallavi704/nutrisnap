@@ -40,18 +40,36 @@ def build_matcher(terms) -> re.Pattern:
     return re.compile(rf"(?<![a-z]){joined}(?![a-z])")
 
 
-def find_terms(text: str, matcher: re.Pattern) -> list[str]:
+def find_terms(
+    text: str,
+    matcher: re.Pattern,
+    negations: dict[str, tuple[str, ...]] | None = None,
+) -> list[str]:
     """Distinct matches, in the order they appear.
 
     Order matters on an ingredient list: it is sorted by weight, so a sugar in
     position two says something a sugar in position twelve does not.
+
+    ``negations`` cancels a match based on the word in front of it, which is the
+    only thing standing between this and a wall of false alarms: "peanut butter"
+    is not dairy, "coconut milk" is not dairy, and telling someone with a milk
+    allergy otherwise trains them to ignore the warnings.
     """
     seen, out = set(), []
-    for m in matcher.finditer(normalize(text)):
+    haystack = normalize(text)
+
+    for m in matcher.finditer(haystack):
         term = m.group(0)
-        if term not in seen:
-            seen.add(term)
-            out.append(term)
+        if term in seen:
+            continue
+        blockers = (negations or {}).get(term)
+        if blockers:
+            preceding = haystack[max(0, m.start() - 24):m.start()].strip()
+            last_word = preceding.split(" ")[-1] if preceding else ""
+            if last_word in blockers or any(preceding.endswith(b) for b in blockers):
+                continue
+        seen.add(term)
+        out.append(term)
     return out
 
 

@@ -245,3 +245,75 @@ def test_analysis_is_deterministic():
     first, second = analyze(p, "balanced", ["vegan"]), analyze(p, "balanced", ["vegan"])
     assert first.score.total == second.score.total
     assert [f.label for f in first.flags] == [f.label for f in second.flags]
+
+
+# --- allergens -------------------------------------------------------------
+from core import allergens as alg  # noqa: E402
+
+
+def test_peanut_butter_is_not_dairy():
+    """The classic false positive. Flagging it teaches users to ignore flags."""
+    flags = alg.check("Peanut butter, salt", ["milk"])
+    assert not any(f.level == "avoid" for f in flags)
+
+
+def test_coconut_milk_is_not_dairy():
+    flags = alg.check("Coconut milk, water, guar gum", ["milk"])
+    assert not any(f.level == "avoid" for f in flags)
+
+
+def test_real_milk_is_still_caught():
+    flags = alg.check("Whole milk, sugar", ["milk"])
+    assert any(f.term == "milk" and f.level == "avoid" for f in flags)
+
+
+def test_nutmeg_is_not_a_tree_nut():
+    flags = alg.check("Flour, nutmeg, cinnamon", ["tree_nut"])
+    assert not any(f.level == "avoid" for f in flags)
+
+
+def test_hidden_peanut_names_are_caught():
+    for term in ("groundnut oil", "arachis oil", "mandelona"):
+        flags = alg.check(f"Vegetable oil, {term}", ["peanut"])
+        assert any(f.level == "avoid" for f in flags), term
+
+
+def test_soy_lecithin_is_caution_not_certainty():
+    """Lecithin is usually soy but can be sunflower — that's a caution."""
+    flags = alg.check("Chocolate, lecithin", ["soy"])
+    assert any(f.term == "lecithin" and f.level == "caution" for f in flags)
+
+
+def test_worcestershire_is_flagged_as_fish():
+    flags = alg.check("Worcestershire sauce, vinegar", ["fish"])
+    assert any(f.level == "avoid" for f in flags)
+
+
+def test_lactose_intolerance_differs_from_milk_allergy():
+    """Butter is dairy, but it is not a lactose problem."""
+    allergy = alg.check("Butter, salt", ["milk"])
+    intolerance = alg.check("Butter, salt", ["lactose"])
+    assert any(f.level == "avoid" for f in allergy)
+    assert not any(f.level in ("avoid", "caution") for f in intolerance)
+
+
+def test_may_contain_statements_are_quoted_verbatim():
+    text = "Oats, sugar. May contain traces of peanuts and tree nuts."
+    flags = alg.check(text, ["peanut"])
+    warn = [f for f in flags if f.label == "Cross-contamination warning"]
+    assert warn and "may contain" in warn[0].detail.lower()
+
+
+def test_shared_facility_wording_is_detected():
+    assert alg.precautionary("Manufactured in a facility that processes sesame")
+
+
+def test_clean_label_reports_nothing_found_not_safe():
+    flags = alg.check("Oats, water", ["peanut"])
+    assert all(f.level == "ok" for f in flags)
+    assert "safe" not in " ".join(f.detail.lower() for f in flags)
+
+
+def test_sulphite_e_numbers_are_caught():
+    flags = alg.check("Wine, E220", ["sulphite"])
+    assert any(f.level == "avoid" for f in flags)

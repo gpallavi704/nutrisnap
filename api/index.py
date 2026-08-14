@@ -18,6 +18,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from core.analyze import Analysis, analyze
+from core.allergens import LABELS as ALLERGEN_LABELS
 from core.diet import DIET_LABELS
 from core.score import GOALS
 from services import off
@@ -36,6 +37,7 @@ class AnalyzeRequest(BaseModel):
     image: str | None = Field(default=None, description="data:image/... URL")
     goal: str = "balanced"
     diets: list[str] = Field(default_factory=list)
+    allergens: list[str] = Field(default_factory=list)
 
 
 def _serialize(a: Analysis) -> dict:
@@ -99,6 +101,7 @@ async def health() -> dict:
         "vision_configured": bool(os.getenv("GROQ_API_KEY", "").strip()),
         "goals": {k: v["label"] for k, v in GOALS.items()},
         "diets": DIET_LABELS,
+        "allergens": ALLERGEN_LABELS,
     }
 
 
@@ -129,7 +132,8 @@ async def analyze_endpoint(req: AnalyzeRequest):
             status_code=404,
         )
 
-    return _serialize(analyze(product, goal=req.goal, diets=req.diets))
+    return _serialize(analyze(product, goal=req.goal, diets=req.diets,
+                              allergens=req.allergens))
 
 
 # Static files last, so /api/* always wins.

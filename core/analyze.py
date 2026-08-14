@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from core import additives as add
+from core import allergens as alg
 from core import diet, normalize, sugars
 from core.model import Flag, Nutrients, Product
 from core.score import Score, score
@@ -41,8 +42,10 @@ class Analysis:
         return sugars.teaspoons(self.headline_sugar_g)
 
 
-def analyze(product: Product, goal: str = "balanced", diets: list[str] | None = None) -> Analysis:
+def analyze(product: Product, goal: str = "balanced", diets: list[str] | None = None,
+            allergens: list[str] | None = None) -> Analysis:
     diets = diets or []
+    allergens = allergens or []
     notes: list[str] = []
 
     container = normalize.per_container(product)
@@ -60,6 +63,7 @@ def analyze(product: Product, goal: str = "balanced", diets: list[str] | None = 
 
     found = add.find_additives(product.ingredients_text)
     flags = diet.check(product.ingredients_text, diets) if diets else []
+    flags += alg.check(product.ingredients_text, allergens)
 
     if reading.alcohols:
         flags.append(Flag(
