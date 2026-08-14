@@ -64,6 +64,7 @@ def _serialize(a: Analysis) -> dict:
             "sugar_g": a.headline_sugar_g,
             "teaspoons": a.headline_teaspoons,
             "basis": "package" if a.per_container else "serving",
+            "basis_label": a.basis_label,
         },
         "sugars": {
             "aliases": a.sugars.aliases,
@@ -90,6 +91,7 @@ def _serialize(a: Analysis) -> dict:
             ],
         },
         "notes": a.notes,
+        "counterpoint": a.counterpoint,
         "macro_ok": a.macro_ok,
     }
 

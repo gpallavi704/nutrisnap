@@ -47,11 +47,17 @@ def _nutrients(n: dict, suffix: str, scale: float = 1.0) -> Nutrients:
         # Salt is sodium chloride; the standard conversion divides by 2.5.
         sodium_g = None if salt_g is None else salt_g / 2.5
 
+    # Contributor entries sometimes put milligrams in the grams field, giving
+    # values like 0.0002 mg of sodium. A real product is either 0 or >= 1 mg.
+    sodium_mg = None if sodium_g is None else sodium_g * 1000.0
+    if sodium_mg is not None and 0 < sodium_mg < 1:
+        sodium_mg = None
+
     return Nutrients(
         calories=g("energy-kcal"),
         total_fat_g=g("fat"),
         saturated_fat_g=g("saturated-fat"),
-        sodium_mg=None if sodium_g is None else sodium_g * 1000.0,
+        sodium_mg=sodium_mg,
         total_carb_g=g("carbohydrates"),
         fiber_g=g("fiber"),
         total_sugars_g=g("sugars"),

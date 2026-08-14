@@ -173,6 +173,41 @@
                font-variant-numeric:tabular-nums}
   .caption{font-size:.76rem;color:var(--faint);margin-top:9px}
 
+  /* ---------- the panel ----------
+     Drawn to the FDA's own proportions: the rule weights carry the hierarchy,
+     which is why the real thing is legible at a glance and why imitating it
+     costs no explanation. */
+  .nf{margin:0 16px 16px;border:1.5px solid var(--ink);border-radius:4px;
+      padding:10px 12px 8px;background:var(--card);font-variant-numeric:tabular-nums}
+  .nf h3{font-family:var(--cond);font-size:1.35rem;margin:0;letter-spacing:-.02em;
+         line-height:1}
+  .nf .basis{display:flex;justify-content:space-between;gap:10px;font-size:.78rem;
+             color:var(--soft);margin-top:3px}
+  .nf .bar{height:8px;background:var(--ink);margin:6px -12px}
+  .nf .thin{height:1px;background:var(--rule);margin:0 -12px}
+  .nf .mid{height:4px;background:var(--ink);margin:5px -12px}
+  .nf .l{display:flex;justify-content:space-between;gap:12px;padding:3px 0;
+         font-size:.86rem}
+  .nf .l.ind{padding-left:14px;color:var(--soft)}
+  .nf .l b{font-weight:700}
+  .nf .cal{display:flex;justify-content:space-between;align-items:baseline}
+  .nf .cal .k{font-family:var(--cond);font-size:1.05rem;font-weight:700}
+  .nf .cal .v{font-family:var(--cond);font-size:1.9rem;line-height:1}
+  .nf .miss{color:var(--faint)}
+  .switch{display:flex;gap:0;margin:0 16px 10px;border:1px solid var(--rule);
+          border-radius:6px;overflow:hidden}
+  .switch button{flex:1;border:0;background:var(--card);color:var(--soft);
+        font-family:var(--cond);text-transform:uppercase;letter-spacing:.07em;
+        font-size:.68rem;font-weight:700;padding:.5rem .3rem;cursor:pointer}
+  .switch button[aria-pressed="true"]{background:var(--accent);color:#fff}
+  .switch button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+
+  .passline{display:flex;gap:7px;align-items:flex-start;font-size:.83rem;
+            color:var(--good);background:var(--good-bg);border-radius:7px;
+            padding:.45rem .7rem;margin-bottom:7px}
+  .counter{font-size:.86rem;color:var(--warn);background:var(--warn-bg);
+           border-radius:7px;padding:.5rem .7rem;margin-bottom:8px}
+
   /* ---------- flags & notes ---------- */
   .body{padding:0 16px 16px}
   .flag{display:flex;gap:9px;padding:.55rem .7rem;border-radius:7px;margin-bottom:7px;
@@ -452,6 +487,51 @@ function dial(total){
 
 const ICON={ok:"✓",caution:"!",avoid:"✕",unknown:"?"};
 
+const ROWS=[
+  ["total_fat_g","Total Fat","g",1],["saturated_fat_g","Saturated Fat","g",1],
+  ["sodium_mg","Sodium","mg",0],["total_carb_g","Total Carbohydrate","g",1],
+  ["fiber_g","Dietary Fiber","g",1],["total_sugars_g","Total Sugars","g",1],
+  ["added_sugars_g","Includes Added Sugars","g",1],["protein_g","Protein","g",1],
+];
+const INDENT=new Set(["saturated_fat_g","fiber_g","total_sugars_g","added_sugars_g"]);
+
+/* The real panel, to the FDA's proportions. It is the most recognisable object
+   in the category, so borrowing it means the card explains itself. */
+function factsPanel(item,basis){
+  const n=item.nutrition[basis];
+  if(!n) return "";
+  const p=item.product;
+  const label = basis==="per_container" ? "Whole package"
+              : basis==="per_100g" ? (p.is_beverage?"Per 100 ml":"Per 100 g")
+              : `Per ${item.headline.basis_label||"serving"}`.replace("per ","");
+  const rows=ROWS.map(([k,name,unit,dp])=>{
+    const v=n[k];
+    return `<div class="l ${INDENT.has(k)?"ind":""}">
+      <span>${INDENT.has(k)?"":"<b>"}${name}${INDENT.has(k)?"":"</b>"}</span>
+      <span class="${v===null?"miss":""}">${v===null?"—":num(v,dp)+" "+unit}</span>
+    </div><div class="thin"></div>`}).join("");
+  return `<div class="nf">
+    <h3>Nutrition Facts</h3>
+    <div class="basis"><span>${esc(label)}</span>
+      ${p.servings_per_container?`<span>${num(p.servings_per_container,2)} per container</span>`:""}</div>
+    <div class="bar"></div>
+    <div class="cal"><span class="k">Calories</span>
+      <span class="v ${n.calories===null?"miss":""}">${n.calories===null?"—":num(n.calories,0)}</span></div>
+    <div class="mid"></div>
+    ${rows}
+  </div>`;
+}
+
+function basisSwitch(item,current){
+  const opts=[["per_serving","Serving"],["per_container","Package"],["per_100g",
+              item.product.is_beverage?"100 ml":"100 g"]]
+    .filter(([k])=>item.nutrition[k]);
+  if(opts.length<2) return "";
+  return `<div class="switch" role="group" aria-label="Show nutrition per">
+    ${opts.map(([k,l])=>`<button type="button" data-basis="${k}"
+      aria-pressed="${k===current}">${l}</button>`).join("")}</div>`;
+}
+
 function card(item,rank,total){
   const s=item.score,p=item.product,h=item.headline;
   const el=document.createElement("article");
@@ -463,7 +543,7 @@ function card(item,rank,total){
   const reveal=h.sugar_g===null?"":`
     <div class="reveal ${alarm?"alarm":""}">
       <div class="big">${num(h.sugar_g)} g sugar</div>
-      <div class="sub">per ${h.basis==="package"?"whole package":"serving"}${
+      <div class="sub">per ${esc(h.basis_label||"serving")}${
         p.servings_per_container>1.2
         ? ` — the label splits this into ${num(p.servings_per_container,2)} servings`:""}</div>
       ${tsp!==null?`<div class="cubes">${cubes(tsp)}</div>
@@ -478,7 +558,13 @@ function card(item,rank,total){
       <span class="rv">${c.value===null?"not read":esc(num(c.value)+" "+c.unit)}</span>
     </div>`;}).join("");
 
-  const flags=item.flags.map(f=>
+  /* Four green rows saying "nothing found" drowned the one red row that
+     mattered. Passes collapse to a single line; only problems get space. */
+  const passed=item.flags.filter(f=>f.level==="ok");
+  const issues=item.flags.filter(f=>f.level!=="ok");
+  const passLine=passed.length?`<div class="passline"><i>✓</i><span>${
+    esc(passed.map(f=>f.label).join(" · "))} — nothing found</span></div>`:"";
+  const flags=passLine+issues.map(f=>
     `<div class="flag ${f.level}"><i>${ICON[f.level]||"·"}</i><span>${esc(f.detail)}</span></div>`).join("");
   const notes=item.notes.map(n=>`<div class="note">${esc(n)}</div>`).join("");
 
@@ -507,7 +593,10 @@ function card(item,rank,total){
       ? esc(s.reason||"not scorable")
       : `${esc(s.goal_label)} · ${esc(s.basis)}`}</div>
     ${reveal}
+    ${basisSwitch(item,item._basis||"per_serving")}
+    ${factsPanel(item,item._basis||"per_serving")}
     <div class="body">
+      ${item.counterpoint?`<div class="counter">${esc(item.counterpoint)}</div>`:""}
       ${flags}${notes}
       ${item.additive_summary?`<div class="note">${esc(item.additive_summary)}</div>`:""}
       ${!item.macro_ok?`<div class="flag caution"><i>!</i><span>The macros don't reconcile with the calories — this reading may be wrong.</span></div>`:""}
@@ -528,7 +617,13 @@ function render(){
   tray.classList.toggle("multi",state.tray.length>1);
   const ranked=[...state.tray].sort((a,b)=>
     (a.score.total===null)-(b.score.total===null)||b.score.total-a.score.total);
-  ranked.forEach((it,i)=>tray.appendChild(card(it,i,ranked.length)));
+  ranked.forEach((it,i)=>{
+    const el=card(it,i,ranked.length);
+    el.querySelectorAll("[data-basis]").forEach(b=>{
+      b.onclick=()=>{it._basis=b.dataset.basis;render()};
+    });
+    tray.appendChild(el);
+  });
 }
 
 $("#emptyCubes").innerHTML=cubes(7);
@@ -546,7 +641,9 @@ $("#cam").addEventListener("change",e=>{const f=e.target.files[0];if(f)scan(f);e
 $("#clear").onclick=()=>{state.tray=[];status("");render()};
 $("#demo").onclick=async()=>{
   status("Loading three sample products",false,true);
-  const samples=["5449000000996","3017620422003","0028400064057"];
+  // Three granola bars: same category, same health halo, genuinely different
+  // answers. Ranking unrelated products demonstrates nothing.
+  const samples=["0016000264694","0722252101204","0096619215607"];
   state.tray=[];
   for(const b of samples){ try{ state.tray.push(await send({barcode:b})) }catch{} }
   status(state.tray.length?"":"Couldn't reach Open Food Facts.",!state.tray.length);

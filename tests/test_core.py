@@ -317,3 +317,41 @@ def test_clean_label_reports_nothing_found_not_safe():
 def test_sulphite_e_numbers_are_caught():
     flags = alg.check("Wine, E220", ["sulphite"])
     assert any(f.level == "avoid" for f in flags)
+
+
+def test_may_contain_is_not_read_as_an_ingredient():
+    """Nature Valley's label: soy is an ingredient, peanut is only a warning."""
+    text = ("Whole Grain Oats, Sugar, Soy Lecithin. "
+            "CONTAINS SOY; MAY CONTAIN PEANUT, ALMOND AND PECAN INGREDIENTS")
+    flags = alg.check(text, ["peanut"])
+    assert not any(f.level == "avoid" for f in flags), "peanut is precautionary, not declared"
+    assert any(f.label == "Cross-contamination warning" for f in flags)
+
+
+def test_declared_allergen_before_a_may_contain_still_counts():
+    text = "Peanuts, sugar. May contain milk."
+    assert any(f.level == "avoid" and (f.term or "").startswith("peanut")
+               for f in alg.check(text, ["peanut"]))
+
+
+def test_diet_rules_also_ignore_the_may_contain_tail():
+    from core import diet as d
+    text = "Oats, sugar. May contain milk and honey."
+    assert not any(f.level == "avoid" for f in d.check(text, ["vegan"]))
+
+
+def test_multipack_box_is_not_the_headline_basis():
+    """A 30-bar box is a real total and a useless headline."""
+    p = make(servings_per_container=30.0, serving_grams=40.0,
+             per_serving=Nutrients(total_sugars_g=6, calories=200))
+    a = analyze(p)
+    assert a.headline_sugar_g == pytest.approx(6.0)
+    assert "serving" in a.basis_label
+    assert any("30 servings" in n for n in a.notes)
+
+
+def test_small_multipack_still_reports_the_package():
+    p = make(servings_per_container=2.5, per_serving=Nutrients(total_sugars_g=26))
+    a = analyze(p)
+    assert a.headline_sugar_g == pytest.approx(65.0)
+    assert a.basis_label == "whole package"

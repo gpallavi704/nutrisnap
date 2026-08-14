@@ -17,6 +17,7 @@ comfortable and less honest.
 
 from __future__ import annotations
 
+from core.allergens import split_precautionary
 from core.model import Flag
 from core.text import build_matcher, find_terms
 
@@ -133,6 +134,8 @@ def check(ingredients_text: str | None, diets: list[str]) -> list[Flag]:
     if not ingredients_text:
         return [Flag("unknown", "No ingredient list", "Nothing to check against.")]
 
+    # "May contain" is not an ingredient; see allergens.split_precautionary.
+    ingredients_text, _ = split_precautionary(ingredients_text)
     flags: list[Flag] = []
 
     for diet in diets:

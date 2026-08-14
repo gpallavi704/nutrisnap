@@ -222,6 +222,22 @@ def precautionary(text: str | None) -> list[str]:
     return out
 
 
+def split_precautionary(text: str | None) -> tuple[str, str]:
+    """Separate the ingredient list from the 'may contain' tail.
+
+    A label ending "MAY CONTAIN PEANUT" is telling you the opposite of what an
+    ingredient line means. Scanning it as one string reports peanut as a
+    confirmed ingredient, which is both wrong and the kind of wrong that
+    persuades someone to distrust every other flag.
+    """
+    if not text:
+        return "", ""
+    m = _PRECAUTIONARY.search(text)
+    if not m:
+        return text, ""
+    return text[:m.start()], text[m.start():]
+
+
 def check(ingredients_text: str | None, selected: list[str]) -> list[Flag]:
     """Allergen flags for the selected sensitivities."""
     if not selected:
@@ -230,13 +246,15 @@ def check(ingredients_text: str | None, selected: list[str]) -> list[Flag]:
         return [Flag("unknown", "No ingredient list",
                      "There is no ingredient text to check for allergens.")]
 
+    declared, warning_tail = split_precautionary(ingredients_text)
+
     flags: list[Flag] = []
     for key in selected:
         rules = ALLERGENS.get(key)
         if not rules:
             continue
         label = LABELS.get(key, key)
-        hits = [t for t in find_terms(ingredients_text, _MATCHERS[key], NEGATIONS)
+        hits = [t for t in find_terms(declared, _MATCHERS[key], NEGATIONS)
                 if rules[t][0] != "ok"]
         for term in hits:
             level, why = rules[term]
