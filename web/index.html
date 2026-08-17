@@ -6,14 +6,19 @@
 <title>NutriSnap</title>
 <style>
   :root{
-    --ground:#F4F7F5; --card:#FFFFFF; --sunk:#EBF0ED; --raise:#FFFFFF;
+    --ground:#F4F7F5; --card:#FFFFFFF2; --sunk:#EBF0EDE6; --raise:#FFFFFF;
     --ink:#101614; --soft:#495451; --faint:#636D69;
     --rule:#DBE2DE; --heavy:#101614;
     --accent:#0F6B70; --accent-soft:#DEEDED;
     --good:#25683F; --warn:#8A5A12; --bad:#B23A2A;
     --good-bg:#E4EFE8; --warn-bg:#F7EFDF; --bad-bg:#F8E7E3;
     --cube:#D9B27C; --cube-top:#EBCB9E;
-    --grain:rgba(15,107,112,.055);
+    --grain:rgba(15,107,112,.05);
+    --blob-a:rgba(240,180,70,.30);    /* mango   */
+    --blob-b:rgba(120,190,140,.30);   /* leaf    */
+    --blob-c:rgba(120,200,205,.26);   /* teal    */
+    --blob-d:rgba(232,140,160,.24);   /* berry   */
+    --blob-e:rgba(250,205,110,.26);   /* citrus  */
     --shadow:0 1px 2px rgba(16,22,20,.06), 0 8px 24px -12px rgba(16,22,20,.18);
     --cond:"Avenir Next Condensed","HelveticaNeue-CondensedBold","Arial Narrow",system-ui,sans-serif;
     --sans:ui-sans-serif,-apple-system,"Segoe UI",Roboto,sans-serif;
@@ -21,31 +26,43 @@
   }
   @media (prefers-color-scheme:dark){
     :root:not([data-theme="light"]){
-      --ground:#0C1211; --card:#151C1B; --sunk:#1A2221; --raise:#1D2625;
+      --ground:#0C1211; --card:#151C1BF2; --sunk:#1A2221E6; --raise:#1D2625;
       --ink:#E8EEEB; --soft:#AEB9B6; --faint:#828C89;
       --rule:#28322F; --heavy:#E8EEEB;
       --accent:#4FB3B8; --accent-soft:#14302F;
       --good:#5FB682; --warn:#D6A24C; --bad:#E0806F;
       --good-bg:#152A1F; --warn-bg:#2B2415; --bad-bg:#2E1C18;
       --cube:#B8945F; --cube-top:#D2AE79;
-      --grain:rgba(79,179,184,.07);
+      --grain:rgba(79,179,184,.06);
+      --blob-a:rgba(150,105,30,.34);
+      --blob-b:rgba(38,110,70,.36);
+      --blob-c:rgba(30,110,120,.36);
+      --blob-d:rgba(120,55,75,.30);
+      --blob-e:rgba(140,110,35,.28);
       --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -14px rgba(0,0,0,.7);
     }
   }
   *{box-sizing:border-box}
   html{-webkit-text-size-adjust:100%}
-  /* A faint granular lattice — sugar, not stock photography. Drawn in CSS so it
-     costs nothing to load, never fights the numbers on top of it, and can't
-     look like a template. */
+  /* ---------- the page background ----------
+     A soft colour field built from food hues: mango, leaf, berry, citrus and
+     the teal accent, blurred into each other and fixed so it sits still while
+     the content scrolls over it. Cards stay opaque, so nothing here ever
+     competes with a number. */
   body{margin:0;color:var(--ink);font-family:var(--sans);
        font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;
        background-color:var(--ground);
        background-image:
-         radial-gradient(circle at 1px 1px, var(--grain) 1px, transparent 0),
+         radial-gradient(42rem 34rem at 8% -6%,  var(--blob-a), transparent 62%),
+         radial-gradient(38rem 30rem at 96% 4%,  var(--blob-b), transparent 60%),
+         radial-gradient(46rem 36rem at 78% 42%, var(--blob-c), transparent 58%),
+         radial-gradient(40rem 32rem at 4% 66%,  var(--blob-d), transparent 60%),
+         radial-gradient(34rem 28rem at 52% 96%, var(--blob-e), transparent 62%),
          radial-gradient(circle at 1px 1px, var(--grain) 1px, transparent 0);
-       background-size:22px 22px, 22px 22px;
-       background-position:0 0, 11px 11px;
-       background-attachment:fixed}
+       background-size:auto,auto,auto,auto,auto,22px 22px;
+       background-attachment:fixed,fixed,fixed,fixed,fixed,fixed;
+       background-repeat:no-repeat,no-repeat,no-repeat,no-repeat,no-repeat,repeat}
+
   .wrap{max-width:1080px;margin:0 auto;padding:0 20px 90px}
 
   /* ---------- masthead ---------- */
@@ -80,8 +97,9 @@
   .tag em{color:var(--ink);font-style:normal;font-weight:600}
 
   /* ---------- controls ---------- */
-  .panel{background:var(--card);border:1px solid var(--rule);border-radius:10px;
-         padding:18px;margin-top:24px;box-shadow:var(--shadow)}
+  .panel{background:var(--card);border:1px solid var(--rule);border-radius:12px;
+         padding:18px;margin-top:24px;box-shadow:var(--shadow);
+         backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
   .grid{display:grid;gap:16px}
   @media(min-width:660px){.grid.two{grid-template-columns:1fr 1fr}}
   .lbl{font-family:var(--cond);text-transform:uppercase;letter-spacing:.13em;
@@ -270,7 +288,8 @@
   .tray{display:grid;gap:20px;margin-top:26px}
   @media(min-width:820px){.tray.multi{grid-template-columns:repeat(auto-fit,minmax(340px,1fr));align-items:start}}
 
-  .card{background:var(--card);border:1px solid var(--rule);border-radius:14px;
+  .card{background:var(--card);backdrop-filter:blur(10px);
+        -webkit-backdrop-filter:blur(10px);border:1px solid var(--rule);border-radius:14px;
         overflow:hidden;box-shadow:var(--shadow);animation:rise .32s ease both;
         transition:box-shadow .18s ease,transform .18s ease}
   .card:hover{box-shadow:0 2px 4px rgba(16,22,20,.07),0 18px 40px -18px rgba(16,22,20,.28);
