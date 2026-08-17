@@ -1138,6 +1138,18 @@ $("#barcode").innerHTML=Array.from({length:78},(_,i)=>{
 fetch("/api/health").then(r=>r.json()).then(h=>{
   if(h.allergens) ALLERGENS=h.allergens;
   renderChips();
+  // Say it up front rather than letting someone photograph a label and fail.
+  if(h.vision_configured===false){
+    const l=document.querySelector('label[for="cam"]');
+    if(l) l.title="Photo reading needs a Groq key; barcodes and CSV work without one";
+    const note=document.createElement("div");
+    note.className="note";
+    note.style.cssText="margin-top:12px;font-size:.83rem";
+    note.textContent="Reading a photographed panel needs a Groq API key, which "+
+      "this public deployment runs without. Barcode scanning and CSV lists work "+
+      "fully. Run it locally with a key to use the camera path.";
+    document.querySelector(".panel")?.appendChild(note);
+  }
 }).catch(()=>{});
 $("#cam").addEventListener("change",e=>{const f=e.target.files[0];if(f)scan(f);e.target.value=""});
 $("#clear").onclick=()=>{state.tray=[];state.batch=null;state.q="";status("");render()};

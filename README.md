@@ -16,6 +16,8 @@ uv run uvicorn api.index:app --reload --port 8010
 
 Open http://localhost:8010 and press **Try a sample pantry**.
 
+Live demo: **https://nutrisnap-nu-seven.vercel.app**
+
 ---
 
 ## The problem, in one product
@@ -94,6 +96,28 @@ no score at all, rather than a flattering one.
 
 **A false alarm has a cost too.** Peanut butter is not dairy and coconut milk is
 not dairy. Negation lists keep the flags worth reading.
+
+## What works where
+
+The deployed site runs **without a Groq key on purpose**. It is public, and a
+personal free-tier key would let any visitor spend the daily token budget. So
+the hosted build serves everything that needs no model, and the photo path is
+enabled only when running locally with a key.
+
+| Feature | Deployed | Local with a key |
+|---|---|---|
+| Barcode lookup | yes | yes |
+| CSV shopping list, ranking, export | yes | yes |
+| Allergen and diet flags | yes | yes |
+| Sugar recombination, serving maths, scoring | yes | yes |
+| Reading a photographed nutrition panel | no, returns a clear message | yes |
+
+Nothing breaks without the key. The photo endpoint returns
+`"GROQ_API_KEY is not set, so photo reading is unavailable. Barcode lookup
+still works."` and the rest of the app carries on, because the barcode and CSV
+paths never touch a model.
+
+Live: https://nutrisnap-nu-seven.vercel.app
 
 ## Configuration
 
