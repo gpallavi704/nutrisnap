@@ -118,6 +118,62 @@
   .empty{text-align:center;padding:56px 20px;color:var(--faint);margin-top:26px}
   .empty .cubes{display:flex;gap:6px;justify-content:center;margin-bottom:18px;opacity:.45}
 
+  /* ---------- batch ---------- */
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(122px,1fr));gap:10px;
+         margin-top:22px}
+  .tile{background:var(--card);border:1px solid var(--rule);border-radius:9px;
+        padding:12px 13px;box-shadow:var(--shadow)}
+  .tile .k{font-family:var(--cond);text-transform:uppercase;letter-spacing:.11em;
+           font-size:.62rem;color:var(--faint)}
+  .tile .v{font-family:var(--cond);font-size:1.75rem;line-height:1.05;margin-top:2px;
+           font-variant-numeric:tabular-nums}
+  .tile .s{font-size:.72rem;color:var(--soft)}
+
+  .board{background:var(--card);border:1px solid var(--rule);border-radius:11px;
+         margin-top:16px;box-shadow:var(--shadow);overflow:hidden}
+  .board .bh{display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+             padding:13px 15px;border-bottom:1px solid var(--rule)}
+  .board .bh h2{font-family:var(--cond);font-size:1.15rem;margin:0;flex:1}
+  .board input[type=search]{border:1px solid var(--rule);border-radius:6px;
+        padding:.42rem .6rem;font:inherit;font-size:.85rem;background:var(--ground);
+        color:var(--ink);min-width:150px}
+  .board input[type=search]:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+  .toggle{display:flex;align-items:center;gap:6px;font-size:.83rem;color:var(--soft);
+          cursor:pointer}
+
+  .chart{padding:14px 15px;border-bottom:1px solid var(--rule)}
+  .chart .cr{display:grid;grid-template-columns:minmax(90px,150px) 1fr auto;gap:9px;
+             align-items:center;font-size:.78rem;padding:2px 0}
+  .chart .cr .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--soft)}
+  .chart .cr .tr{height:9px;background:var(--sunk);border-radius:5px;overflow:hidden}
+  .chart .cr .tr i{display:block;height:100%;border-radius:5px}
+  .chart .cr .n{font-family:var(--mono);font-size:.74rem;font-variant-numeric:tabular-nums;
+                color:var(--soft)}
+
+  .tblwrap{overflow-x:auto}
+  table.grid{border-collapse:collapse;width:100%;min-width:620px;font-size:.87rem}
+  table.grid th{position:sticky;top:0;background:var(--card);text-align:left;
+        font-family:var(--cond);text-transform:uppercase;letter-spacing:.09em;
+        font-size:.65rem;color:var(--faint);padding:9px 12px;cursor:pointer;
+        border-bottom:2px solid var(--ink);white-space:nowrap;user-select:none}
+  table.grid th:hover{color:var(--accent)}
+  table.grid th[aria-sort]{color:var(--accent)}
+  table.grid td{padding:9px 12px;border-bottom:1px solid var(--rule);
+        font-variant-numeric:tabular-nums;vertical-align:middle}
+  table.grid tbody tr:hover{background:var(--sunk)}
+  table.grid .nm{font-weight:600;max-width:230px;overflow:hidden;
+        text-overflow:ellipsis;white-space:nowrap;display:block}
+  table.grid .cat{color:var(--faint);font-size:.76rem}
+  .mini{width:56px;height:6px;background:var(--sunk);border-radius:3px;
+        overflow:hidden;display:inline-block;vertical-align:middle;margin-right:7px}
+  .mini i{display:block;height:100%}
+  .tag{display:inline-block;font-size:.68rem;padding:.1rem .4rem;border-radius:4px;
+       margin-right:3px;font-weight:600}
+  .tag.avoid{background:var(--bad-bg);color:var(--bad)}
+  .tag.caution{background:var(--warn-bg);color:var(--warn)}
+  .tag.unknown{background:var(--sunk);color:var(--soft)}
+  .tag.ok{background:var(--good-bg);color:var(--good)}
+
   /* ---------- cards ---------- */
   .tray{display:grid;gap:20px;margin-top:26px}
   @media(min-width:820px){.tray.multi{grid-template-columns:repeat(auto-fit,minmax(340px,1fr));align-items:start}}
@@ -305,7 +361,10 @@
     <div class="actions">
       <label class="btn" for="cam">Scan a label</label>
       <input type="file" id="cam" accept="image/*" capture="environment">
-      <button class="btn ghost" id="demo">Load sample</button>
+      <label class="btn ghost" for="csv">Upload a list (CSV)</label>
+      <input type="file" id="csv" accept=".csv,text/csv">
+      <button class="btn ghost" id="pantry">Load sample pantry</button>
+      <button class="btn ghost" id="demo">3 granola bars</button>
       <button class="btn ghost" id="clear">Clear</button>
       <span class="status" id="status" role="status" aria-live="polite"></span>
     </div>
@@ -316,6 +375,7 @@
     Scan a product to begin. Add a second and they rank against each other.
   </div>
 
+  <div id="batch"></div>
   <div class="tray" id="tray"></div>
 
   <footer>
@@ -333,7 +393,8 @@ const DIETS={vegan:"Vegan",vegetarian:"Vegetarian",gluten_free:"Gluten free",dai
 let ALLERGENS={peanut:"Peanut free",tree_nut:"Tree nut free",soy:"Soy free",
   egg:"Egg free",milk:"Milk free",lactose:"Low lactose",wheat:"Wheat free",
   fish:"Fish free",shellfish:"Shellfish free",sesame:"Sesame free"};
-const state={goal:"less_sugar",diets:new Set(),allergens:new Set(),tray:[]};
+const state={goal:"less_sugar",diets:new Set(),allergens:new Set(),tray:[],
+  batch:null,meta:{},sort:{key:"score",dir:-1},q:"",onlyFlagged:false};
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const num=(v,d=1)=>v===null||v===undefined?"—":Number(v).toFixed(d).replace(/\.0$/,"");
@@ -427,6 +488,10 @@ async function scan(file){
 
 async function rescoreAll(){
   renderChips();
+  if(state.batch){
+    const codes=state.batch.products.map(p=>p.product.barcode).filter(Boolean);
+    if(codes.length) await runBatch(codes,state.meta);
+  }
   if(!state.tray.length)return render();
   status("Rescoring",false,true);
   const out=[];
@@ -438,6 +503,137 @@ async function rescoreAll(){
     }catch{ out.push(item) }
   }
   state.tray=out;status("");render();
+}
+
+/* ---- batch: a shopping list at once ---- */
+
+/* Tolerant on purpose: people paste exports from anywhere. Any column named
+   like a barcode wins; otherwise the first field that looks like one does. */
+function parseCsv(text){
+  const lines=text.split(/\r?\n/).filter(l=>l.trim());
+  if(!lines.length) return {codes:[],meta:{}};
+  const cells=l=>l.split(",").map(c=>c.trim().replace(/^"|"$/g,""));
+  const head=cells(lines[0]).map(h=>h.toLowerCase());
+  const bi=head.findIndex(h=>/barcode|upc|ean|gtin|code/.test(h));
+  const ni=head.findIndex(h=>/name|product|item|title/.test(h));
+  const ci=head.findIndex(h=>/categor|type|aisle|section/.test(h));
+  const hasHeader=bi!==-1||head.some(h=>/name|product|categor/.test(h));
+  const rows=hasHeader?lines.slice(1):lines;
+  const codes=[],meta={};
+  for(const line of rows){
+    const c=cells(line);
+    const code=(bi!==-1?c[bi]:c.find(x=>/^\d{8,14}$/.test(x)))||"";
+    if(!/^\d{6,14}$/.test(code)) continue;
+    codes.push(code);
+    meta[code]={name:ni!==-1?c[ni]:"",category:ci!==-1?c[ci]:""};
+  }
+  return {codes,meta};
+}
+
+async function runBatch(codes,meta){
+  if(!codes.length){status("No barcodes found in that file.",true);return}
+  status(`Analysing ${codes.length} products`,false,true);
+  try{
+    const r=await fetch("/api/batch",{method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({barcodes:codes,goal:state.goal,diets:[...state.diets],
+        allergens:[...state.allergens]})});
+    const body=await r.json();
+    if(!r.ok) throw new Error(body.error||"batch failed");
+    state.batch=body; state.meta=meta||{};
+    status(""); render();
+  }catch(e){ status(e.message,true) }
+}
+
+const band=v=>v===null?"var(--rule)":v>=70?"var(--good)":v>=40?"var(--warn)":"var(--bad)";
+
+function sortRows(rows){
+  const {key,dir}=state.sort;
+  const val=p=>({
+    score:p.score.total, sugar:p.headline.sugar_g, tsp:p.headline.teaspoons,
+    add:p.additives.length, name:(p.product.name||"").toLowerCase(),
+  })[key];
+  return [...rows].sort((a,a2)=>{
+    const x=val(a),y=val(a2);
+    if(x===null||x===undefined) return 1;
+    if(y===null||y===undefined) return -1;
+    return x>y?dir:x<y?-dir:0;
+  });
+}
+
+function batchView(){
+  if(!state.batch) return "";
+  const s=state.batch.summary;
+  let rows=state.batch.products;
+  if(state.q){const q=state.q.toLowerCase();
+    rows=rows.filter(p=>(p.product.name||"").toLowerCase().includes(q)||
+      (state.meta[p.product.barcode]?.category||"").toLowerCase().includes(q));}
+  if(state.onlyFlagged) rows=rows.filter(p=>p.flags.some(f=>f.level==="avoid"));
+  rows=sortRows(rows);
+
+  const tiles=[
+    ["Products",s.found,`${s.requested} requested`],
+    ["Median score",s.median_score??"—",state.batch.products[0]?.score.goal_label||""],
+    ["Sugar in the list",`${num(s.total_sugar_g,0)} g`,`≈ ${num(s.total_sugar_g/4.2,0)} tsp`],
+    ["Flagged",s.flagged,"contain something you excluded"],
+    ["Coverage",`${Math.round(s.coverage*100)}%`,
+      s.unreachable?.length?`${s.unreachable.length} lookups throttled`:"of codes resolved"],
+  ].map(([k,v,sub])=>`<div class="tile"><div class="k">${esc(k)}</div>
+      <div class="v">${esc(String(v))}</div><div class="s">${esc(sub)}</div></div>`).join("");
+
+  const chartRows=sortRows(state.batch.products).slice(0,12).map(p=>`
+    <div class="cr"><span class="nm">${esc(p.product.name)}</span>
+      <span class="tr"><i style="width:${p.score.total??0}%;background:${band(p.score.total)}"></i></span>
+      <span class="n">${p.score.total===null?"—":p.score.total}</span></div>`).join("");
+
+  const head=[["name","Product"],["score","Score"],["sugar","Sugar"],
+              ["tsp","Teaspoons"],["add","Additives"]].map(([k,l])=>
+    `<th data-sort="${k}" ${state.sort.key===k?`aria-sort="${state.sort.dir>0?"ascending":"descending"}"`:""}>${l}</th>`
+  ).join("")+"<th>Flags</th>";
+
+  const body=rows.map(p=>{
+    const m=state.meta[p.product.barcode]||{};
+    const worst=p.flags.filter(f=>f.level!=="ok").slice(0,2);
+    return `<tr><td><span class="nm">${esc(p.product.name)}</span>
+        ${m.category?`<span class="cat">${esc(m.category)}</span>`:""}</td>
+      <td><span class="mini"><i style="width:${p.score.total??0}%;background:${band(p.score.total)}"></i></span>${p.score.total===null?"—":p.score.total}</td>
+      <td>${p.headline.sugar_g===null?"—":num(p.headline.sugar_g)+" g"}</td>
+      <td>${p.headline.teaspoons===null?"—":num(p.headline.teaspoons)}</td>
+      <td>${p.additives.length}</td>
+      <td>${worst.length?worst.map(f=>`<span class="tag ${f.level}">${esc((f.term||f.label).slice(0,16))}</span>`).join(""):'<span class="tag ok">clear</span>'}</td>
+    </tr>`}).join("");
+
+  return `<div class="tiles">${tiles}</div>
+  <div class="board">
+    <div class="bh">
+      <h2>Shopping list</h2>
+      <input type="search" id="q" placeholder="Filter by name or category" value="${esc(state.q)}">
+      <label class="toggle"><input type="checkbox" id="onlyFlagged" ${state.onlyFlagged?"checked":""}> Only flagged</label>
+      <button class="btn ghost" id="export">Export CSV</button>
+    </div>
+    <div class="chart">${chartRows}</div>
+    <div class="tblwrap"><table class="grid"><thead><tr>${head}</tr></thead>
+      <tbody>${body}</tbody></table></div>
+  </div>`;
+}
+
+function exportCsv(){
+  const cols=["barcode","name","category","score","goal","sugar_g","teaspoons",
+              "additives","calories","sodium_mg","protein_g","flags","source"];
+  const line=v=>`"${String(v??"").replace(/"/g,'""')}"`;
+  const out=[cols.join(",")];
+  for(const p of state.batch.products){
+    const m=state.meta[p.product.barcode]||{}, n=p.nutrition.per_serving;
+    out.push([p.product.barcode,p.product.name,m.category||"",p.score.total??"",
+      p.score.goal_label,p.headline.sugar_g??"",p.headline.teaspoons===null?"":num(p.headline.teaspoons),
+      p.additives.length,n.calories??"",n.sodium_mg??"",n.protein_g??"",
+      p.flags.filter(f=>f.level!=="ok").map(f=>f.term||f.label).join("; "),
+      p.product.source].map(line).join(","));
+  }
+  const blob=new Blob([out.join("\n")],{type:"text/csv"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob); a.download="nutrisnap-analysis.csv"; a.click();
+  URL.revokeObjectURL(a.href);
 }
 
 /* ---- the reveal: sugar as cubes ---- */
@@ -612,8 +808,20 @@ function card(item,rank,total){
 
 function render(){
   renderChips();
+  $("#batch").innerHTML=batchView();
+  if(state.batch){
+    $("#q").oninput=e=>{state.q=e.target.value;render();
+      const el=$("#q");el.focus();el.setSelectionRange(el.value.length,el.value.length)};
+    $("#onlyFlagged").onchange=e=>{state.onlyFlagged=e.target.checked;render()};
+    $("#export").onclick=exportCsv;
+    document.querySelectorAll("th[data-sort]").forEach(th=>th.onclick=()=>{
+      const k=th.dataset.sort;
+      state.sort = state.sort.key===k?{key:k,dir:-state.sort.dir}:{key:k,dir:-1};
+      render();
+    });
+  }
   const tray=$("#tray");tray.innerHTML="";
-  $("#empty").style.display=state.tray.length?"none":"block";
+  $("#empty").style.display=(state.tray.length||state.batch)?"none":"block";
   tray.classList.toggle("multi",state.tray.length>1);
   const ranked=[...state.tray].sort((a,b)=>
     (a.score.total===null)-(b.score.total===null)||b.score.total-a.score.total);
@@ -638,7 +846,21 @@ fetch("/api/health").then(r=>r.json()).then(h=>{
   renderChips();
 }).catch(()=>{});
 $("#cam").addEventListener("change",e=>{const f=e.target.files[0];if(f)scan(f);e.target.value=""});
-$("#clear").onclick=()=>{state.tray=[];status("");render()};
+$("#clear").onclick=()=>{state.tray=[];state.batch=null;state.q="";status("");render()};
+$("#csv").addEventListener("change",async e=>{
+  const f=e.target.files[0]; e.target.value="";
+  if(!f) return;
+  const {codes,meta}=parseCsv(await f.text());
+  runBatch(codes,meta);
+});
+$("#pantry").onclick=async()=>{
+  status("Loading the sample pantry",false,true);
+  try{
+    const {csv}=await (await fetch("/api/sample-list")).json();
+    const {codes,meta}=parseCsv(csv);
+    runBatch(codes,meta);
+  }catch(e){ status("Couldn't load the sample list.",true) }
+};
 $("#demo").onclick=async()=>{
   status("Loading three sample products",false,true);
   // Three granola bars: same category, same health halo, genuinely different

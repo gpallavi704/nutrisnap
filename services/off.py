@@ -11,6 +11,8 @@ US panel prints milligrams. Getting that wrong understates sodium by 1000x.
 
 from __future__ import annotations
 
+import asyncio
+
 import httpx
 
 from core.model import Nutrients, Product
@@ -111,23 +113,45 @@ def to_product(raw: dict) -> Product:
     )
 
 
-async def lookup(barcode: str) -> Product | None:
-    """Fetch one product. Returns None when the database doesn't know it."""
+class LookupFailed(RuntimeError):
+    """The database could not be reached — distinct from 'not in the database'.
+
+    Conflating the two makes a throttled batch look like a coverage problem, and
+    a coverage number that is really a rate-limit is worse than no number.
+    """
+
+
+async def lookup(barcode: str, client: httpx.AsyncClient | None = None) -> Product | None:
+    """Fetch one product. None means the database genuinely has no such code."""
     barcode = (barcode or "").strip()
     if not barcode.isdigit():
         return None
     if barcode in _cache:
         return _cache[barcode]
 
+    owned = client is None
+    client = client or httpx.AsyncClient(timeout=TIMEOUT, headers={"User-Agent": UA})
     try:
-        async with httpx.AsyncClient(timeout=TIMEOUT, headers={"User-Agent": UA}) as client:
-            r = await client.get(API.format(barcode=barcode), params={"fields": FIELDS})
-        if r.status_code != 200:
-            _cache[barcode] = None
-            return None
-        body = r.json()
-    except Exception:
-        return None  # not cached: a network blip should not become a permanent miss
+        body = None
+        for attempt in range(3):
+            try:
+                r = await client.get(API.format(barcode=barcode), params={"fields": FIELDS})
+            except Exception:
+                r = None
+            if r is not None and r.status_code == 200:
+                body = r.json()
+                break
+            # 429/503 are the server asking for room, not an answer about the product.
+            if r is not None and r.status_code == 404:
+                _cache[barcode] = None
+                return None
+            await asyncio.sleep(0.6 * (attempt + 1))
+
+        if body is None:
+            raise LookupFailed(barcode)
+    finally:
+        if owned:
+            await client.aclose()
 
     if body.get("status") != 1 or not body.get("product"):
         _cache[barcode] = None

@@ -12,6 +12,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from dotenv import load_dotenv
+import httpx
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -30,6 +31,13 @@ ROOT = Path(__file__).resolve().parent.parent
 WEB = ROOT / "web"
 
 app = FastAPI(title="NutriSnap", docs_url="/api/docs")
+
+
+class BatchRequest(BaseModel):
+    barcodes: list[str] = Field(default_factory=list, max_length=60)
+    goal: str = "balanced"
+    diets: list[str] = Field(default_factory=list)
+    allergens: list[str] = Field(default_factory=list)
 
 
 class AnalyzeRequest(BaseModel):
@@ -136,6 +144,72 @@ async def analyze_endpoint(req: AnalyzeRequest):
 
     return _serialize(analyze(product, goal=req.goal, diets=req.diets,
                               allergens=req.allergens))
+
+
+@app.post("/api/batch")
+async def batch_endpoint(req: BatchRequest):
+    """Analyse a shopping list in one pass.
+
+    Barcode-only by design: a list of sixty products is not sixty photographs,
+    and Open Food Facts costs no tokens, so a whole pantry can be scored without
+    touching the model at all.
+    """
+    seen: set[str] = set()
+    results, missing, unreachable = [], [], []
+
+    # One connection for the whole list, paced so the public API doesn't
+    # throttle us into reporting real products as missing.
+    async with httpx.AsyncClient(
+        timeout=off.TIMEOUT, headers={"User-Agent": off.UA},
+        limits=httpx.Limits(max_connections=4),
+    ) as client:
+        for code in req.barcodes:
+            code = (code or "").strip()
+            if not code or code in seen:
+                continue
+            seen.add(code)
+            try:
+                product = await off.lookup(code, client=client)
+            except off.LookupFailed:
+                unreachable.append(code)
+                continue
+            if product is None:
+                missing.append(code)
+                continue
+            results.append(_serialize(
+                analyze(product, goal=req.goal, diets=req.diets, allergens=req.allergens)
+            ))
+
+    scored = [r for r in results if r["score"]["total"] is not None]
+    summary = {
+        "requested": len(seen),
+        "found": len(results),
+        "missing": missing,
+        "unreachable": unreachable,
+        # Coverage is measured against products we actually got an answer about.
+        "coverage": (round(len(results) / (len(results) + len(missing)), 3)
+                     if (results or missing) else 0),
+        "median_score": (
+            sorted(r["score"]["total"] for r in scored)[len(scored) // 2]
+            if scored else None
+        ),
+        "total_sugar_g": round(
+            sum(r["headline"]["sugar_g"] or 0 for r in results), 1),
+        "flagged": sum(
+            1 for r in results
+            if any(f["level"] == "avoid" for f in r["flags"])),
+    }
+    return {"summary": summary, "products": results}
+
+
+@app.get("/api/sample-list")
+async def sample_list() -> dict:
+    """The shipped pantry CSV, so the demo works with no file to hand."""
+    path = ROOT / "data" / "pantry.csv"
+    if not path.exists():
+        return {"csv": "", "rows": 0}
+    text = path.read_text()
+    return {"csv": text, "rows": max(0, len(text.strip().splitlines()) - 1)}
 
 
 # Static files last, so /api/* always wins.
