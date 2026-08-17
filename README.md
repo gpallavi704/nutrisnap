@@ -119,6 +119,14 @@ paths never touch a model.
 
 Live: https://nutrisnap-nu-seven.vercel.app
 
+## Rebuilding this from scratch
+
+`BUILD_PROMPT.md` is a specification you can paste into an AI coding assistant to
+recreate the app. The useful part is section 7, which encodes ten real defects as
+requirements: precautionary "may contain" wording being read as an ingredient,
+peanut butter matching as dairy, beverages flattering themselves on food scoring
+bands, and a coverage statistic that was really a rate limit.
+
 ## Configuration
 
 | Variable | Purpose |

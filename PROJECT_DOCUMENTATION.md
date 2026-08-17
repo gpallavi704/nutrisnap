@@ -215,7 +215,14 @@ Live: https://nutrisnap-nu-seven.vercel.app
   systematically.
 - English labels only, and `BarcodeDetector` is unavailable in Safari.
 
-## 11. Running it
+## 11. Reproducing the build
+
+`BUILD_PROMPT.md` in the repository is a single specification prompt that
+rebuilds the application from scratch. It carries the ten defects found during
+this project forward as explicit requirements, so the next developer inherits
+the findings rather than rediscovering them.
+
+## 12. Running it
 
 ```bash
 git clone https://github.com/gpallavi704/nutrisnap
