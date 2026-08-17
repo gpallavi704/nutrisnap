@@ -184,6 +184,45 @@
   .tag.unknown{background:var(--sunk);color:var(--soft)}
   .tag.ok{background:var(--good-bg);color:var(--good)}
 
+
+  /* ---------- landing ---------- */
+  .hero{display:grid;gap:34px;align-items:center;padding:14px 0 8px}
+  @media(min-width:880px){.hero{grid-template-columns:1.05fr .95fr;gap:48px;padding:26px 0 14px}}
+  .hero h2{font-family:var(--cond);font-size:clamp(2.5rem,6.4vw,4rem);line-height:.98;
+           margin:0 0 16px;letter-spacing:-.02em;text-wrap:balance}
+  .hero h2 em{font-style:normal;color:var(--accent);position:relative;white-space:nowrap}
+  .hero h2 em::after{content:"";position:absolute;left:0;right:0;bottom:.07em;height:.28em;
+           background:var(--cube);opacity:.3;border-radius:2px;z-index:-1}
+  .hero p{font-size:1.08rem;color:var(--soft);margin:0 0 22px;max-width:44ch;line-height:1.6}
+  .hero .cta{display:flex;gap:10px;flex-wrap:wrap}
+  .hero .btn{padding:.85rem 1.4rem;font-size:.9rem}
+
+  .demo{background:var(--card);border:1px solid var(--rule);border-radius:16px;
+        padding:20px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .demo::before{content:"";position:absolute;right:-60px;top:-60px;width:200px;height:200px;
+        border-radius:50%;background:var(--accent);opacity:.05}
+  .demo .cap{font-family:var(--cond);text-transform:uppercase;letter-spacing:.13em;
+        font-size:.64rem;color:var(--faint);margin-bottom:12px}
+  .demo .claim{display:flex;justify-content:space-between;align-items:baseline;
+        padding:9px 0;border-bottom:1px solid var(--rule);font-size:.9rem}
+  .demo .claim .n{font-family:var(--mono);font-size:.86rem;color:var(--soft)}
+  .demo .truth{margin-top:15px;padding:15px;border-radius:11px;background:var(--bad-bg)}
+  .demo .truth .big{font-family:var(--cond);font-size:2.45rem;line-height:1;color:var(--bad)}
+  .demo .truth .sub{font-size:.83rem;color:var(--soft);margin-top:5px}
+  .demo .cubes{margin-top:11px}
+
+  .feats{display:grid;gap:13px;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));
+         margin-top:40px}
+  .feat{background:var(--card);border:1px solid var(--rule);border-radius:13px;
+        padding:17px;box-shadow:var(--shadow);transition:transform .16s,box-shadow .16s}
+  .feat:hover{transform:translateY(-2px);
+        box-shadow:0 2px 5px rgba(16,22,20,.07),0 18px 38px -18px rgba(16,22,20,.3)}
+  @media(prefers-reduced-motion:reduce){.feat:hover{transform:none}}
+  .feat h3{font-family:var(--cond);font-size:1.05rem;margin:11px 0 5px;color:var(--ink);
+           text-transform:none;letter-spacing:0}
+  .feat p{font-size:.87rem;color:var(--soft);margin:0;line-height:1.5}
+  .feat .ic{width:38px;height:38px;border-radius:10px;display:grid;place-items:center}
+
   /* ---------- cards ---------- */
   .tray{display:grid;gap:20px;margin-top:26px}
   @media(min-width:820px){.tray.multi{grid-template-columns:repeat(auto-fit,minmax(340px,1fr));align-items:start}}
@@ -365,6 +404,24 @@
     <div class="barcode" id="barcode" aria-hidden="true"></div>
   </header>
 
+
+  <section id="empty">
+    <div class="hero">
+      <div>
+        <h2>The label is arranged so you <em>won't notice</em>.</h2>
+        <p>Sugar is split across six names so none reaches the top of the list.
+           Quantities are quoted per serving when nobody eats one serving.
+           NutriSnap puts it back together.</p>
+        <div class="cta">
+          <label class="btn" for="cam">Scan a label</label>
+          <button class="btn ghost" id="pantry2">Try a sample pantry</button>
+        </div>
+      </div>
+      <div class="demo" id="demoCard"></div>
+    </div>
+    <div class="feats" id="feats"></div>
+  </section>
+
   <div class="panel">
     <div class="grid two">
       <div>
@@ -376,10 +433,10 @@
         <div class="chips" id="diets"></div>
       </div>
     </div>
-    <div style="margin-top:16px">
-      <div class="lbl">Allergens &amp; intolerances</div>
-      <div class="chips" id="allergens"></div>
-    </div>
+    <details style="margin-top:16px" id="algBox">
+      <summary>Allergens &amp; intolerances</summary>
+      <div class="chips" id="allergens" style="margin-top:10px"></div>
+    </details>
     <div class="actions">
       <label class="btn" for="cam">Scan a label</label>
       <input type="file" id="cam" accept="image/*" capture="environment">
@@ -390,14 +447,6 @@
       <button class="btn ghost" id="clear">Clear</button>
       <span class="status" id="status" role="status" aria-live="polite"></span>
     </div>
-  </div>
-
-  <div id="empty" class="empty">
-    <div class="cubes" id="emptyCubes"></div>
-    <h2>What's actually in it?</h2>
-    <p style="max-width:38ch;margin:.2rem auto 0">Scan one product, or upload a
-    whole shopping list. Sugars get recombined, servings get restated, and
-    nothing is rounded into a yes.</p>
   </div>
 
   <div id="batch"></div>
@@ -444,6 +493,8 @@ function renderChips(){
   chips($("#goals"),GOALS,k=>state.goal===k,k=>{state.goal=k;rescoreAll()});
   chips($("#diets"),DIETS,k=>state.diets.has(k),
         k=>{state.diets.has(k)?state.diets.delete(k):state.diets.add(k);rescoreAll()});
+  const box=$("#algBox");
+  if(box&&state.allergens.size) box.open=true;
   chips($("#allergens"),ALLERGENS,k=>state.allergens.has(k),
         k=>{state.allergens.has(k)?state.allergens.delete(k):state.allergens.add(k);rescoreAll()});
 }
@@ -928,7 +979,41 @@ function render(){
   });
 }
 
-$("#emptyCubes").innerHTML=HERO;
+/* The landing demo is the pitch, shown rather than described: what one real
+   bottle claims, against what is actually in it. */
+$("#demoCard").innerHTML=`
+  <div class="cap">A 20 oz bottle of iced tea</div>
+  <div class="claim"><span>Serving size</span><span class="n">8 fl oz</span></div>
+  <div class="claim"><span>Servings per container</span><span class="n">2.5</span></div>
+  <div class="claim"><span>Total sugars, per serving</span><span class="n">26 g</span></div>
+  <div class="truth">
+    <div class="big">65 g</div>
+    <div class="sub">what you actually drink, once the servings are multiplied out</div>
+    <div class="cubes">${cubes(15.5)}</div>
+  </div>`;
+
+const FEATURES=[
+  ["#B08A54","#D9B27C22","M4 15h16 M7 15V9 M12 15V6 M17 15v-4","65 names for sugar",
+   "Dextrose, maltodextrin, cane juice. Recombined into a single figure so splitting them stops working."],
+  ["var(--accent)","var(--accent-soft)","M4 6h16 M4 12h16 M4 18h10 M19 16l2 2-2 2",
+   "Serving-size arithmetic","A bottle that declares 2.5 servings reports a quarter of what you drink. Restated per package."],
+  ["#B23A2A","#B23A2A18","M12 3l9 16H3z M12 9v5 M12 17h.01","16 allergens",
+   "Casein, carmine, isinglass, L-cysteine. What \"contains milk\" never tells you, plus may-contain warnings."],
+  ["#4A86BD","#4A86BD22","M4 19V5 M4 19h16 M8 16V9 M13 16v-4 M18 16V6","Whole lists at once",
+   "Upload a CSV of a shopping list and rank the lot against one goal, then export the analysis."],
+];
+$("#feats").innerHTML=FEATURES.map(([col,bg,path,title,body])=>`
+  <div class="feat">
+    <div class="ic" style="background:${bg}">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="${col}"
+        stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+        aria-hidden="true"><path d="${path}"/></svg>
+    </div>
+    <h3>${title}</h3><p>${body}</p>
+  </div>`).join("");
+
+// The hero's own buttons drive the same actions as the toolbar.
+$("#pantry2").onclick=()=>$("#pantry").click();
 $("#barcode").innerHTML=Array.from({length:78},(_,i)=>{
   const w=[1,1,2,3,1,2,1,4,2,1,3,1,1,2][i%14];
   return `<i style="width:${w}px;height:${70+((i*37)%30)}%"></i>`;
