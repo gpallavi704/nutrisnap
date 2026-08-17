@@ -709,7 +709,8 @@ function factsPanel(item,basis){
   return `<div class="nf">
     <h3>Nutrition Facts</h3>
     <div class="basis"><span>${esc(label)}</span>
-      ${p.servings_per_container?`<span>${num(p.servings_per_container,2)} per container</span>`:""}</div>
+      ${p.servings_per_container?`<span>${num(p.servings_per_container,
+          Number.isInteger(p.servings_per_container)?0:2)} per container</span>`:""}</div>
     <div class="bar"></div>
     <div class="cal"><span class="k">Calories</span>
       <span class="v ${n.calories===null?"miss":""}">${n.calories===null?"—":num(n.calories,0)}</span></div>
@@ -740,10 +741,11 @@ function card(item,rank,total){
     <div class="reveal ${alarm?"alarm":""}">
       <div class="big">${num(h.sugar_g)} g sugar</div>
       <div class="sub">per ${esc(h.basis_label||"serving")}${
-        p.servings_per_container>1.2
-        ? ` — the label splits this into ${num(p.servings_per_container,2)} servings`:""}</div>
-      ${tsp!==null?`<div class="cubes">${cubes(tsp)}</div>
-        <div class="caption">≈ ${num(tsp)} teaspoons of sugar</div>`:""}
+        h.basis==="package"&&p.servings_per_container>1.2
+        ? ` — the label splits this into ${num(p.servings_per_container,0)} servings`:""}</div>
+      ${tsp!==null&&tsp>=0.5?`<div class="cubes">${cubes(tsp)}</div>
+        <div class="caption">≈ ${num(tsp)} teaspoons of sugar</div>`:
+        tsp!==null?`<div class="caption">Barely any sugar — under a quarter teaspoon.</div>`:""}
     </div>`;
 
   const rubric=s.components.map(c=>{

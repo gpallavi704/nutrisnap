@@ -67,7 +67,7 @@ def _counterpoint(n100, is_beverage: bool, goal: str) -> str | None:
         return None
     worst = min(weak, key=lambda c: c.subscore)
     return (f"Scores well on this goal, but {worst.label.lower()} is high at "
-            f"{worst.value:g} {worst.unit} — pick a different goal to see it weighed.")
+            f"{worst.value:.1f} {worst.unit} — pick a different goal to see it weighed.")
 
 
 def analyze(product: Product, goal: str = "balanced", diets: list[str] | None = None,
@@ -82,7 +82,7 @@ def analyze(product: Product, goal: str = "balanced", diets: list[str] | None = 
     n_serv = product.servings_per_container or 0
     headline_container = container if 0 < n_serv <= MULTIPACK_SERVINGS else None
     hundred = normalize.per_100g(product)
-    notes.extend(normalize.analyze_servings(product))
+    notes.extend(normalize.analyze_servings(product, MULTIPACK_SERVINGS))
 
     check = normalize.macro_check(product.per_serving)
     if check.message:

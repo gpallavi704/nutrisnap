@@ -355,3 +355,28 @@ def test_small_multipack_still_reports_the_package():
     a = analyze(p)
     assert a.headline_sugar_g == pytest.approx(65.0)
     assert a.basis_label == "whole package"
+
+
+def test_multipack_does_not_get_the_single_serving_lecture():
+    """A 12-bar box is not "1/12 of what's in your hand" — nobody holds the box."""
+    a = analyze(make(servings_per_container=12.0,
+                     per_serving=Nutrients(total_sugars_g=1, calories=200)))
+    joined = " ".join(a.notes)
+    assert "in your hand" not in joined
+    assert "12 servings" in joined
+
+
+def test_single_sitting_package_still_gets_it():
+    a = analyze(make(servings_per_container=2.5,
+                     per_serving=Nutrients(total_sugars_g=26, calories=110)))
+    assert any("in your hand" in n for n in a.notes)
+
+
+def test_counterpoint_rounds_its_numbers():
+    p = make(serving_grams=55.0, is_beverage=False,
+             per_serving=Nutrients(calories=200, total_fat_g=7, saturated_fat_g=3,
+                                   total_carb_g=20, total_sugars_g=1, protein_g=20,
+                                   sodium_mg=75))
+    a = analyze(p, goal="balanced")
+    if a.counterpoint:
+        assert "5.45455" not in a.counterpoint

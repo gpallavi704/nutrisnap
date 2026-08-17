@@ -87,13 +87,22 @@ def macro_check(n: Nutrients) -> MacroCheck:
     return MacroCheck(n.calories, computed, delta * 100, ok, msg)
 
 
-def analyze_servings(product: Product) -> list[str]:
-    """Notes about the serving declaration itself, worth surfacing verbatim."""
+def analyze_servings(product: Product, multipack_above: float = 4.0) -> list[str]:
+    """Notes about the serving declaration itself, worth surfacing verbatim.
+
+    Only meaningful for packages a person might finish in one go. Telling
+    someone that a twelve-bar box "is 1/12 of what's in your hand" describes a
+    box nobody is holding, and the multipack note in ``analyze`` covers it
+    better.
+    """
     notes: list[str] = []
     n = product.servings_per_container
 
     if n is None:
         notes.append("No servings-per-container figure, so per-package totals are unavailable.")
+        return notes
+
+    if n > multipack_above:
         return notes
 
     if n > 1.2:
