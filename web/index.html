@@ -209,8 +209,13 @@
   .dial .val{position:absolute;inset:0;display:grid;place-items:center;
              font-family:var(--cond);font-size:1.15rem;font-variant-numeric:tabular-nums}
   .dial .na{font-size:.7rem;color:var(--faint)}
-  .goalline{padding:0 16px 14px;font-size:.78rem;color:var(--faint);
+  .goalline{padding:0 16px 12px;font-size:.78rem;color:var(--faint);
             font-family:var(--cond);text-transform:uppercase;letter-spacing:.09em}
+  .verdict{margin:0 16px 16px;padding:13px 15px;border-radius:9px;
+           background:var(--accent-soft);border-left:3px solid var(--accent);
+           font-size:.95rem;line-height:1.55;color:var(--ink)}
+  .verdict.blocked{background:var(--bad-bg);border-left-color:var(--bad)}
+  .verdict.unsure{background:var(--warn-bg);border-left-color:var(--warn)}
 
   /* ---------- the reveal ---------- */
   .reveal{margin:0 16px 16px;padding:16px;border-radius:10px;background:var(--sunk)}
@@ -789,7 +794,10 @@ function card(item,rank,total){
     </div>
     <div class="goalline">${s.total===null
       ? esc(s.reason||"not scorable")
-      : `${esc(s.goal_label)} · ${esc(s.basis)}`}</div>
+      : `fit for “${esc(s.goal_label)}” · scored ${esc(s.basis)}`}</div>
+    ${item.summary?`<div class="verdict ${
+      item.flags.some(f=>f.level==="avoid")?"blocked":
+      item.flags.some(f=>f.level==="unknown")?"unsure":""}">${esc(item.summary)}</div>`:""}
     ${reveal}
     ${basisSwitch(item,item._basis||"per_serving")}
     ${factsPanel(item,item._basis||"per_serving")}

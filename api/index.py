@@ -22,6 +22,7 @@ from core.analyze import Analysis, analyze
 from core.allergens import LABELS as ALLERGEN_LABELS
 from core.diet import DIET_LABELS
 from core.score import GOALS
+from core.summary import summarize
 from services import off
 from services.vision import VisionUnavailable, read_label
 
@@ -98,6 +99,7 @@ def _serialize(a: Analysis) -> dict:
                 for c in a.score.components
             ],
         },
+        "summary": summarize(a),
         "notes": a.notes,
         "counterpoint": a.counterpoint,
         "macro_ok": a.macro_ok,

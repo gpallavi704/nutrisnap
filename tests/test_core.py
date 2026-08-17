@@ -380,3 +380,50 @@ def test_counterpoint_rounds_its_numbers():
     a = analyze(p, goal="balanced")
     if a.counterpoint:
         assert "5.45455" not in a.counterpoint
+
+
+# --- plain-language summary ------------------------------------------------
+from core.summary import summarize  # noqa: E402
+
+
+def _bar(ingredients):
+    return make(serving_grams=55.0, ingredients_text=ingredients,
+                servings_per_container=12.0,
+                per_serving=Nutrients(calories=200, total_fat_g=7, saturated_fat_g=3,
+                                      sodium_mg=75, total_carb_g=20, fiber_g=3,
+                                      total_sugars_g=1, protein_g=20))
+
+
+def test_summary_leads_with_the_blocking_ingredient():
+    text = summarize(analyze(_bar("Milk protein, collagen, glycerin"),
+                             "less_processed", ["vegetarian"]))
+    assert text.startswith("Not vegetarian")
+    assert "collagen" in text
+
+
+def test_summary_does_not_hedge_after_a_definite_no():
+    """If it's already not vegetarian, 'can't be confirmed either way' contradicts."""
+    text = summarize(analyze(_bar("Collagen, glycerin, artificial flavors"),
+                             "balanced", ["vegetarian"]))
+    assert "either way" not in text
+
+
+def test_summary_hedges_when_only_unknowns_are_present():
+    text = summarize(analyze(_bar("Oats, glycerin"), "balanced", ["vegetarian"]))
+    assert "either way" in text
+
+
+def test_summary_explains_what_the_score_means():
+    text = summarize(analyze(_bar("Oats, water"), "less_processed"))
+    assert "out of 100" in text and "less processed" in text
+
+
+def test_summary_calls_out_split_sugars():
+    p = make(serving_grams=40.0, servings_per_container=1.0,
+             ingredients_text="Oats, cane juice, maltodextrin, brown rice syrup",
+             per_serving=Nutrients(total_sugars_g=8, calories=150))
+    assert "different names" in summarize(analyze(p, "less_sugar"))
+
+
+def test_summary_is_never_empty():
+    assert summarize(analyze(make(), "balanced")).strip()
