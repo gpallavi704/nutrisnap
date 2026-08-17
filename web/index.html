@@ -223,6 +223,49 @@
   .feat p{font-size:.87rem;color:var(--soft);margin:0;line-height:1.5}
   .feat .ic{width:38px;height:38px;border-radius:10px;display:grid;place-items:center}
 
+  /* ---------- photo cards ---------- */
+  .shelf{margin-top:44px}
+  .shelf .head2{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .shelf h3{font-family:var(--cond);font-size:1.7rem;margin:0;letter-spacing:-.01em}
+  .shelf .sub{color:var(--soft);font-size:.92rem}
+
+  .pgrid{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(178px,1fr))}
+  .pcard{background:var(--card);border:1px solid var(--rule);border-radius:14px;
+         overflow:hidden;box-shadow:var(--shadow);cursor:pointer;text-align:left;
+         padding:0;font:inherit;color:inherit;
+         transition:transform .18s ease,box-shadow .18s ease}
+  .pcard:hover{transform:translateY(-3px);
+        box-shadow:0 3px 6px rgba(16,22,20,.08),0 22px 44px -20px rgba(16,22,20,.34)}
+  .pcard:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+  @media(prefers-reduced-motion:reduce){.pcard:hover{transform:none}}
+  .pcard .shot{position:relative;aspect-ratio:1/1;background:var(--sunk);
+        display:grid;place-items:center;overflow:hidden}
+  .pcard .shot img{width:100%;height:100%;object-fit:contain;padding:12px;
+        mix-blend-mode:multiply}
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]) .pcard .shot img{mix-blend-mode:normal}
+    :root:not([data-theme="light"]) .pcard .shot{background:#F3F4F2}
+  }
+  .pcard .badge{position:absolute;top:9px;right:9px;font-family:var(--cond);
+        font-size:.78rem;font-weight:700;padding:.22rem .5rem;border-radius:999px;
+        color:#fff;font-variant-numeric:tabular-nums}
+  .pcard .meta{padding:11px 12px 13px}
+  .pcard .cn{font-family:var(--cond);text-transform:uppercase;letter-spacing:.1em;
+        font-size:.6rem;color:var(--faint)}
+  .pcard .pn{font-weight:600;font-size:.9rem;line-height:1.25;margin-top:3px;
+        display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .pcard .sg{font-size:.78rem;color:var(--soft);margin-top:6px;display:flex;
+        align-items:center;gap:5px}
+  .pcard .dotc{width:8px;height:8px;border-radius:50%;display:inline-block}
+
+  /* hero collage of real packaging */
+  .collage{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .collage .t{aspect-ratio:1/1;border-radius:13px;overflow:hidden;background:#F3F4F2;
+        border:1px solid var(--rule);display:grid;place-items:center;
+        animation:rise .5s ease both}
+  .collage .t img{width:100%;height:100%;object-fit:contain;padding:9px}
+  .collage .t:nth-child(2){grid-row:span 2;aspect-ratio:auto}
+
   /* ---------- cards ---------- */
   .tray{display:grid;gap:20px;margin-top:26px}
   @media(min-width:820px){.tray.multi{grid-template-columns:repeat(auto-fit,minmax(340px,1fr));align-items:start}}
@@ -417,9 +460,20 @@
           <button class="btn ghost" id="pantry2">Try a sample pantry</button>
         </div>
       </div>
-      <div class="demo" id="demoCard"></div>
+      <div>
+        <div class="collage" id="collage"></div>
+        <div class="demo" id="demoCard" style="margin-top:14px"></div>
+      </div>
     </div>
     <div class="feats" id="feats"></div>
+
+    <section class="shelf">
+      <div class="head2">
+        <h3>Already scored</h3>
+        <span class="sub">Real products, real labels. Tap one to open it.</span>
+      </div>
+      <div class="pgrid" id="pgrid"></div>
+    </section>
   </section>
 
   <div class="panel">
@@ -1014,6 +1068,46 @@ $("#feats").innerHTML=FEATURES.map(([col,bg,path,title,body])=>`
 
 // The hero's own buttons drive the same actions as the toolbar.
 $("#pantry2").onclick=()=>$("#pantry").click();
+
+/* Real packaging photographs, from the same database the scores come from.
+   The pictures are the data, not decoration, which is also why they can be
+   used at all: Open Food Facts images are CC-BY-SA. */
+fetch("/api/showcase").then(r=>r.json()).then(list=>{
+  if(!list.length) return;
+  const withPhoto=list.filter(p=>p.image);
+
+  const collage=$("#collage");
+  if(collage) collage.innerHTML=withPhoto.slice(0,5).map((p,i)=>
+    `<div class="t" style="animation-delay:${i*70}ms">
+       <img src="${esc(p.image)}" alt="${esc(p.name)}" loading="lazy"></div>`).join("");
+
+  const grid=$("#pgrid");
+  if(!grid) return;
+  grid.innerHTML=withPhoto.slice(0,12).map(p=>{
+    const col=p.score===null?"var(--faint)":p.score>=70?"var(--good)":p.score>=40?"var(--warn)":"var(--bad)";
+    return `<button class="pcard" data-code="${esc(p.barcode)}"
+        aria-label="Open ${esc(p.name)}">
+      <div class="shot">
+        <img src="${esc(p.image)}" alt="${esc(p.name)}" loading="lazy">
+        ${p.score!==null?`<span class="badge" style="background:${col}">${p.score}</span>`:""}
+      </div>
+      <div class="meta">
+        <div class="cn">${esc(p.category)}</div>
+        <div class="pn">${esc(p.name)}</div>
+        <div class="sg"><i class="dotc" style="background:var(--cube)"></i>
+          ${p.tsp!==null&&p.tsp>=0.5?`${p.tsp} tsp sugar`:"barely any sugar"}</div>
+      </div>
+    </button>`}).join("");
+
+  grid.querySelectorAll(".pcard").forEach(b=>b.onclick=async()=>{
+    status("Opening "+b.querySelector(".pn").textContent,false,true);
+    try{
+      state.tray=[await send({barcode:b.dataset.code})];
+      state.batch=null; status(""); render();
+      window.scrollTo({top:0,behavior:"smooth"});
+    }catch(e){ status(e.message,true) }
+  });
+}).catch(()=>{});
 $("#barcode").innerHTML=Array.from({length:78},(_,i)=>{
   const w=[1,1,2,3,1,2,1,4,2,1,3,1,1,2][i%14];
   return `<i style="width:${w}px;height:${70+((i*37)%30)}%"></i>`;

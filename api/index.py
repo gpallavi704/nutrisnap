@@ -7,6 +7,7 @@ and shaping the result for the browser.
 
 from __future__ import annotations
 
+import json
 import os
 from dataclasses import asdict
 from pathlib import Path
@@ -202,6 +203,17 @@ async def batch_endpoint(req: BatchRequest):
             if any(f["level"] == "avoid" for f in r["flags"])),
     }
     return {"summary": summary, "products": results}
+
+
+@app.get("/api/showcase")
+async def showcase() -> list:
+    """Real product photographs for the landing page.
+
+    Open Food Facts images are CC-BY-SA, and these are the very products the
+    app analyses, so the pictures are the data rather than decoration.
+    """
+    path = ROOT / "data" / "showcase.json"
+    return json.loads(path.read_text()) if path.exists() else []
 
 
 @app.get("/api/sample-list")

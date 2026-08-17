@@ -1,0 +1,212 @@
+[
+ {
+  "barcode": "0096619483556",
+  "name": "organic GREEK YOGURT plain",
+  "brand": "KIRKLAND Signature",
+  "category": "Yogurts",
+  "image": "https://images.openfoodfacts.org/images/products/009/661/948/3556/nutrition_en.653.400.jpg",
+  "score": 100.0,
+  "sugar_g": 4.0,
+  "tsp": 1.0
+ },
+ {
+  "barcode": "0689544083016",
+  "name": "Total 0% Milkfat",
+  "brand": "Fage",
+  "category": "Yogurts",
+  "image": "https://images.openfoodfacts.org/images/products/068/954/408/3016/nutrition_en.452.400.jpg",
+  "score": 100.0,
+  "sugar_g": 0.0,
+  "tsp": null
+ },
+ {
+  "barcode": "0894700010137",
+  "name": "Greek Yogurt Nonfat Plain",
+  "brand": "chobani",
+  "category": "Yogurts",
+  "image": "https://images.openfoodfacts.org/images/products/089/470/001/0137/nutrition_en.840.400.jpg",
+  "score": 100.0,
+  "sugar_g": 0.0,
+  "tsp": null
+ },
+ {
+  "barcode": "0028400147408",
+  "name": "GARDEN SALSA FLAVORED Sun Chips",
+  "brand": "Sun Chips",
+  "category": "Potato crisps",
+  "image": "https://images.openfoodfacts.org/images/products/002/840/014/7408/nutrition_en.68.400.jpg",
+  "score": 79.9,
+  "sugar_g": 2.0,
+  "tsp": 0.5
+ },
+ {
+  "barcode": "0850036699187",
+  "name": "Sweet Potato Chips Sea Salt",
+  "brand": "Jackson's",
+  "category": "Potato crisps",
+  "image": "https://images.openfoodfacts.org/images/products/085/003/669/9187/nutrition_en.34.400.jpg",
+  "score": 65.8,
+  "sugar_g": 3.0,
+  "tsp": 0.7
+ },
+ {
+  "barcode": "0810091780947",
+  "name": "Tortilla Chips",
+  "brand": "Siete",
+  "category": "Potato crisps",
+  "image": "https://images.openfoodfacts.org/images/products/081/009/178/0947/nutrition_en.41.400.jpg",
+  "score": 86.2,
+  "sugar_g": 0.0,
+  "tsp": null
+ },
+ {
+  "barcode": "0096619555505",
+  "name": "Organic Creamy Peanut Butter",
+  "brand": "Kirkland",
+  "category": "Peanut butters",
+  "image": "https://images.openfoodfacts.org/images/products/009/661/955/5505/nutrition_en.409.400.jpg",
+  "score": 92.4,
+  "sugar_g": 0.499,
+  "tsp": 0.1
+ },
+ {
+  "barcode": "0051500255162",
+  "name": "Creamy Peanut Butter",
+  "brand": "Jif",
+  "category": "Peanut butters",
+  "image": "https://images.openfoodfacts.org/images/products/005/150/025/5162/nutrition_en.189.400.jpg",
+  "score": 69.6,
+  "sugar_g": 3.0,
+  "tsp": 0.7
+ },
+ {
+  "barcode": "0051500240946",
+  "name": "CREAMY PEANUT BUTTER",
+  "brand": "Jif",
+  "category": "Peanut butters",
+  "image": "https://images.openfoodfacts.org/images/products/005/150/024/0946/nutrition_en.178.400.jpg",
+  "score": 69.6,
+  "sugar_g": 3.0,
+  "tsp": 0.7
+ },
+ {
+  "barcode": "0747479000413",
+  "name": "Marinara",
+  "brand": "Rao's Homemade",
+  "category": "Sauces",
+  "image": "https://images.openfoodfacts.org/images/products/074/747/900/0413/nutrition_en.62.400.jpg",
+  "score": 95.5,
+  "sugar_g": 4.0,
+  "tsp": 1.0
+ },
+ {
+  "barcode": "0815074022809",
+  "name": "Classic Mayo",
+  "brand": "Chosen Foods",
+  "category": "Sauces",
+  "image": "https://images.openfoodfacts.org/images/products/081/507/402/2809/nutrition_en.152.400.jpg",
+  "score": 85.6,
+  "sugar_g": 0.0,
+  "tsp": null
+ },
+ {
+  "barcode": "0863699000108",
+  "name": "MAYO Real Mayonnaise made with Avocado Oil",
+  "brand": "PRIMAL KITCHEN",
+  "category": "Sauces",
+  "image": "https://images.openfoodfacts.org/images/products/086/369/900/0108/nutrition_en.45.400.jpg",
+  "score": 80.0,
+  "sugar_g": 0.0,
+  "tsp": null
+ },
+ {
+  "barcode": "0857484006611",
+  "name": "dark chocolate coconut whips",
+  "brand": "UNREAL",
+  "category": "Chocolates",
+  "image": "https://images.openfoodfacts.org/images/products/085/748/400/6611/nutrition_en.79.400.jpg",
+  "score": 38.6,
+  "sugar_g": 3.0,
+  "tsp": 0.7
+ },
+ {
+  "barcode": "0014100075233",
+  "name": "Goldfish Baked Snack Crackers Cheddar",
+  "brand": "Pepperidge Farm",
+  "category": "Crackers",
+  "image": "https://images.openfoodfacts.org/images/products/001/410/007/5233/nutrition_en.99.400.jpg",
+  "score": 82.1,
+  "sugar_g": 0.0,
+  "tsp": null
+ },
+ {
+  "barcode": "0030100111238",
+  "name": "CLUB CRACKERS SNACK STACKS",
+  "brand": "CLUB",
+  "category": "Crackers",
+  "image": "https://images.openfoodfacts.org/images/products/003/010/011/1238/nutrition_en.32.400.jpg",
+  "score": 78.7,
+  "sugar_g": 1.0,
+  "tsp": 0.2
+ },
+ {
+  "barcode": "0074570024001",
+  "name": "strawberry ice cream",
+  "brand": "H\u00e4agen-Dazs",
+  "category": "Ice creams",
+  "image": "https://images.openfoodfacts.org/images/products/007/457/002/4001/nutrition_en.20.400.jpg",
+  "score": 30.0,
+  "sugar_g": 87.08,
+  "tsp": 20.7
+ },
+ {
+  "barcode": "0044000050986",
+  "name": "original made with sea salt",
+  "brand": "Triscuit",
+  "category": "Cookies",
+  "image": "https://images.openfoodfacts.org/images/products/004/400/005/0986/nutrition_en.65.400.jpg",
+  "score": 90.0,
+  "sugar_g": 0.0,
+  "tsp": null
+ },
+ {
+  "barcode": "0731216103987",
+  "name": "Aussie Bites",
+  "brand": "Universal Bakery",
+  "category": "Cookies",
+  "image": "https://images.openfoodfacts.org/images/products/073/121/610/3987/nutrition_en.59.400.jpg",
+  "score": 25.3,
+  "sugar_g": 7.0,
+  "tsp": 1.7
+ },
+ {
+  "barcode": "0070847012474",
+  "name": "Zero Ultra",
+  "brand": "Monster Energy",
+  "category": "Energy drinks",
+  "image": "https://images.openfoodfacts.org/images/products/007/084/701/2474/nutrition_en.212.400.jpg",
+  "score": 94.0,
+  "sugar_g": 0.0,
+  "tsp": null
+ },
+ {
+  "barcode": "0889392021394",
+  "name": "Tropical Vibe Sparkling Starfruit Pineapple ",
+  "brand": "CELSIUS",
+  "category": "Energy drinks",
+  "image": "https://images.openfoodfacts.org/images/products/088/939/202/1394/nutrition_en.127.400.jpg",
+  "score": 94.0,
+  "sugar_g": 0.0,
+  "tsp": null
+ },
+ {
+  "barcode": "0722252101204",
+  "name": "ClifBar Crunchy Peanut Butter",
+  "brand": "Clif",
+  "category": "Granola bars",
+  "image": "https://images.openfoodfacts.org/images/products/072/225/210/1204/nutrition_en.197.400.jpg",
+  "score": 54.1,
+  "sugar_g": 11.6,
+  "tsp": 2.8
+ }
+]
