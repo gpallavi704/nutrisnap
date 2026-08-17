@@ -1,35 +1,33 @@
 # NutriSnap
 
-Not "does this fit my diet" — **what am I actually eating?**
+**Nothing on the label is false. That's the problem.**
 
-Scan a grocery label and get the arithmetic it's arranged to obscure: sugars
-recombined across every alias, quantities restated per package rather than per
-invented serving, additives counted. Scan a second product and they rank against
-each other.
+Sugar hides under six different names. Servings are sized so the numbers look
+small. NutriSnap adds it back up and tells you what it found.
+
+Scan one product with your camera, or upload a whole shopping list as CSV and
+rank the lot.
 
 ```bash
 uv sync
 cp .env.example .env          # add a Groq key for the photo path
-uv run uvicorn api.index:app --reload --port 8000
+uv run uvicorn api.index:app --reload --port 8010
 ```
 
-Open http://localhost:8000 and click **Load sample**.
+Open http://localhost:8010 and press **Try a sample pantry**.
 
 ---
 
-## The problem
-
-Everything you need is technically printed on the box. It's arranged so that no
-single number tells the truth:
+## The problem, in one product
 
 | The bottle says | What you drink |
 |---|---|
 | Serving size 8 fl oz | The bottle is 2.5 servings |
-| Sugars 26 g | **65 g — about 16 teaspoons** |
+| Sugars 26 g | **65 g, about 16 teaspoons** |
 | Listed as | cane juice, dextrose, maltodextrin |
 
-Three sweeteners rather than one, so none of them reaches the top of the
-ingredient list. Nothing here is illegal. It's just arranged.
+Three sweeteners instead of one, so none of them reaches the top of the
+ingredient list. Nothing here is illegal. It is arranged.
 
 ## The architecture
 
@@ -46,64 +44,84 @@ Browser        resize photo · decode barcode locally · hold the tray
                        JSON verdict
 ```
 
-The model is never asked for an opinion — only to transcribe what's printed.
+The model is never asked for an opinion, only to transcribe what is printed.
 Every judgement is deterministic Python in `core/`, which has no network access,
-no clock, and 33 tests. Same product in, same verdict out, every time.
+no clock, and **59 tests**. The same product always produces the same verdict.
 
-When a barcode resolves, no image is uploaded at all — only the number.
+When a barcode resolves, no image is uploaded at all. Only the number.
 
-## What the engine does
+## What it does
+
+### Reads a label
+Camera or file. Barcode first because it is exact; the vision model only handles
+products no database knows.
+
+### Analyses a shopping list
+Upload a CSV of barcodes and get the whole list scored, ranked, filtered and
+charted, then export the analysis. Ships with `data/pantry.csv`, thirty real
+products across ten categories.
+
+### The rules engine
 
 | Component | Why it exists |
 |---|---|
 | **Serving normalizer** | Restates everything per container and per 100 g. Two products are only comparable on one basis |
-| **Sugar recombiner** | ~65 aliases — dextrose, maltodextrin, evaporated cane juice — summed into one figure |
-| **Additive classifier** | E-numbers by range plus named additives → "9 additives, 3 colourings" |
-| **Hidden-ingredient rules** | Casein, carmine, isinglass, shellac, L-cysteine, malt. What "milk" doesn't catch |
+| **Sugar recombiner** | ~65 aliases summed into one figure, then drawn as teaspoons |
+| **Additive classifier** | E-numbers by range plus named additives, reported as a shape rather than a list |
+| **Hidden ingredients** | Casein, carmine, isinglass, shellac, L-cysteine, malt. What "contains milk" never tells you |
+| **16 allergens** | The US big nine, the extra EU declarables, pork, and lactose intolerance treated separately from milk allergy |
 | **Macro sanity check** | Verifies kcal ≈ 4·carb + 4·protein + 9·fat, so an OCR misread fails arithmetic instead of being reported as fact |
-| **Goal rubric** | Weighted score that always shows its components |
+| **Goal rubric** | Weighted score against published UK FSA bands, always showing its components |
+| **Plain summary** | Two or three sentences saying what it all adds up to |
 
-### Three honesty rules
+## Five rules the app will not break
+
+**Never claim safety.** It reports "nothing matching was found", which is a
+statement about a text string, not about a food. Only the packaging can tell
+someone their food is safe.
 
 **Uncertainty is never rounded into a yes.** "Natural flavors" and
 "mono- and diglycerides" can be plant or animal derived and the label will never
-say which. They stay amber permanently rather than being guessed.
+say which. They stay amber permanently.
 
-**Missing data is not good data.** A product whose label couldn't be read
-returns no score at all. An earlier version gave Nutella 100/100 because it had
-no nutrition data and therefore no detectable additives.
+**"May contain" is not an ingredient.** Precautionary wording is split off
+before any matching and only ever surfaces as a cross-contamination caution.
+Telling an allergic person that a warning is a certainty is how they learn to
+stop reading warnings.
 
-**Drinks are scored on their own scale.** Per 100 ml, a full-sugar cola looks
-mild against food thresholds — it scored 77/100 for "cut sugar" until beverage
-bands were added. Both scales come from the published UK FSA front-of-pack
-bands.
+**Missing data is not good data.** A product whose label could not be read gets
+no score at all, rather than a flattering one.
 
-## Layout
-
-```
-core/       the rules engine — pure functions, no I/O, fully tested
-services/   Open Food Facts client and Groq vision client
-api/        FastAPI, one endpoint
-web/        single page, no build step
-tests/      33 tests over core/
-```
-
-`core/` never imports from `services/` or `api/`. That's what makes the
-judgement layer testable without mocking a network.
+**A false alarm has a cost too.** Peanut butter is not dairy and coconut milk is
+not dairy. Negation lists keep the flags worth reading.
 
 ## Configuration
 
 | Variable | Purpose |
 |---|---|
-| `GROQ_API_KEY` | Photo reading. **Barcode lookup works without it** |
-| `GROQ_VISION_MODEL` | Default `qwen/qwen3.6-27b` — must be vision-capable |
+| `GROQ_API_KEY` | Photo reading. **Barcode and CSV paths work without it** |
+| `GROQ_VISION_MODEL` | Default `qwen/qwen3.6-27b`, must be vision-capable |
+
+## Layout
+
+```
+core/       the rules engine, pure functions, no I/O, 59 tests
+services/   Open Food Facts client and Groq vision client
+api/        FastAPI: /api/analyze, /api/batch, /api/showcase, /api/health
+web/        single page, no build step
+data/       pantry.csv and showcase.json
+tests/      the rules engine under test
+```
+
+`core/` never imports from `services/` or `api/`. That is what makes the
+judgement layer testable without mocking a network.
 
 ## Deploying
 
-Configured for Vercel. Push the repo, import it, and set `GROQ_API_KEY` in the
-project's environment variables — never in the repo.
+Configured for Vercel. Import the repo and set `GROQ_API_KEY` in the project's
+environment variables, never in the repo.
 
-`requirements.txt` is committed because Vercel doesn't read `uv.lock`.
+`requirements.txt` is committed because Vercel does not read `uv.lock`.
 Regenerate it when dependencies change:
 
 ```bash
@@ -113,28 +131,27 @@ uv export --format requirements-txt --no-hashes --no-emit-project --no-dev -o re
 Barcode decoding runs in the browser via `BarcodeDetector`, which keeps OpenCV
 out of the deployment entirely.
 
-## Prior art
+## Design notes
 
-Inspired by [Nutritionell](https://www.ischool.berkeley.edu/), a Berkeley MIDS
-capstone that turns one photo of a grocery shelf into a scored guide using YOLO
-detection and a VLM.
+The page is drawn rather than photographed: a colour field in food hues, and 27
+hand-drawn food illustrations tiled behind the content as SVG. About 12KB, no
+CDN, nothing to license. Product photographs on the landing page come from Open
+Food Facts (CC-BY-SA) and are pictures of the exact products being scored, so
+the imagery is the data rather than decoration.
 
-That project solved **breadth** — 100 products in a frame. This one deliberately
-takes the other axis: **depth**, one product, arithmetically correct and fully
-auditable.
-
-The two can't be combined, and not by choice: a shelf photo shows the front of
-the pack, and the nutrition panel faces away from the camera.
+Contrast was measured rather than eyeballed. Every text pair clears WCAG AA,
+including over the strongest part of the background.
 
 ## Limitations
 
 - Open Food Facts is community-maintained. Coverage is best in Europe, thinner
-  for small US brands, and entries are occasionally wrong. The source of every
-  number is shown.
+  for small US brands, and entries are occasionally wrong. One product's sodium
+  was stored as `3.38e-07 g`. The source of every number is shown.
 - The photo path is only as good as the photo. The macro check catches
   arithmetic-breaking misreads, not plausible ones.
+- `BarcodeDetector` is unavailable in Safari, which falls back to the vision path.
 - English labels only.
 - Informational analysis of a label. **Not medical or dietary advice**, and never
   a safety claim about allergens.
 
-Data from Open Food Facts, licensed ODbL.
+Data from Open Food Facts, licensed ODbL. Product images CC-BY-SA.
